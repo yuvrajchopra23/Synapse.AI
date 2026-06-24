@@ -1,38 +1,44 @@
-.App {
-  text-align: center;
-}
+/* App.css */
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.app {
   display: flex;
   flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Graph + sidebar sit side by side and fill remaining space */
+.app__main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Status bar at the bottom */
+.app__statusbar {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  gap: 8px;
+  padding: 7px 20px;
+  border-top: 0.5px solid var(--border-dim);
+  background: var(--bg-base);
+  flex-shrink: 0;
 }
 
-.App-link {
-  color: #61dafb;
+.app__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border-mid);
+  flex-shrink: 0;
+  transition: background 0.3s;
 }
+.app__dot--active { background: var(--accent-active); }  /* green when active */
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.app__status-text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.07em;
 }
