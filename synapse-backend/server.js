@@ -6,7 +6,11 @@ const authRoutes = require('./routes/auth');
 
 const app = express();
 
-app.use(cors()); //allow requests from react app(different port)
+app.use(cors({
+  origin: '*',  // allow ALL origins during development
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));//allow requests from react app(different port)
 app.use(express.json());//parse JSON request bodies
 
 app.use('/api/auth', authRoutes);//mount auth routes - all auth endpoints start with /api/auth
