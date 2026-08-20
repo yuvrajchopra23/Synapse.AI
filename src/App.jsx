@@ -8,7 +8,7 @@ import BottomNav     from './components/BottomNav';
 import Login         from './components/Login';
 import Signup        from './components/Signup';
 import { useKnowledgeGraph } from './hooks/useKnowledgeGraph';
-import { useAuth } from './context/AuthContext';
+import { useAuth } from './components/AuthContext';
 
 export default function App() {
   const { isLoggedIn, loading: authLoading, user, logoutUser } = useAuth();
