@@ -1,12 +1,12 @@
 import React, { useCallback, useState } from 'react';
 import './App.css';
-import Topbar        from './components/Topbar';
-import GraphCanvas   from './components/GraphCanvas';
-import Sidebar       from './components/Sidebar';
+import Topbar        from './components/topbar';
+import GraphCanvas   from './components/Graphcanvas';
+import Sidebar       from './components/sidebar';
 import LeftSidebar   from './components/LeftSidebar';
 import BottomNav     from './components/BottomNav';
-import Login         from './pages/Login';
-import Signup        from './pages/Signup';
+import Login         from './components/Login';
+import Signup        from './components/Signup';
 import { useKnowledgeGraph } from './hooks/useKnowledgeGraph';
 import { useAuth } from './context/AuthContext';
 
