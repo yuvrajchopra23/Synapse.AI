@@ -86,3 +86,30 @@
   border-color: var(--border-bright);
   color: var(--text-primary);
 }
+
+@media(max-width: 768px){
+  .topbar{
+    padding:10px 12px;
+    gap:8px;
+  }
+  .topbar__logo{
+    display: none;
+  }
+
+  .topbar__search{
+    flex:1;
+  }
+
+  .topbar__btn{
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+
+  .topbar__user-name{
+    display:none;
+  }
+
+  .topbar__user{
+    gap: 6px;
+  }
+}

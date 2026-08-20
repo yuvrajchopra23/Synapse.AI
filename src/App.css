@@ -1,5 +1,3 @@
-/* App.css */
-
 .app {
   display: flex;
   flex-direction: column;
@@ -8,14 +6,25 @@
   overflow: hidden;
 }
 
-/* Graph + sidebar sit side by side and fill remaining space */
 .app__main {
   display: flex;
   flex: 1;
   overflow: hidden;
 }
 
-/* Status bar at the bottom */
+/* Desktop — all panels visible */
+.app__left,
+.app__canvas,
+.app__right {
+  display: flex;
+  overflow: hidden;
+}
+
+.app__canvas {
+  flex: 1;
+}
+
+/* Status bar */
 .app__statusbar {
   display: flex;
   align-items: center;
@@ -34,11 +43,54 @@
   flex-shrink: 0;
   transition: background 0.3s;
 }
-.app__dot--active { background: var(--accent-active); }  /* green when active */
+.app__dot--active { background: var(--accent-active); }
 
 .app__status-text {
   font-family: var(--font-mono);
   font-size: 10px;
   color: var(--text-dim);
   letter-spacing: 0.07em;
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  /* Hide status bar on mobile — no room */
+  .app__statusbar { display: none; }
+
+  /* Each panel takes full width on mobile */
+  .app__left,
+  .app__canvas,
+  .app__right {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Panel visibility controlled by JS */
+  .app__panel--hidden-mobile {
+    display: none !important;
+  }
+
+  .app__panel--visible {
+    display: flex !important;
+    position: relative;
+  }
+
+  /* Make app__main position relative for absolute panels */
+  .app__main {
+    position: relative;
+  }
+
+  /* Left sidebar full width on mobile */
+  .app__left .lsidebar {
+    width: 100%;
+    border-right: none;
+  }
+
+  /* Right sidebar full width on mobile */
+  .app__right .sidebar {
+    width: 100%;
+    border-left: none;
+  }
 }
