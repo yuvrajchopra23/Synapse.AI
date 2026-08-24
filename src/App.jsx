@@ -11,7 +11,7 @@ import { useKnowledgeGraph } from './hooks/useKnowledgeGraph';
 import { useAuth } from './components/AuthContext';
 
 export default function App() {
-  const { isLoggedIn, loading: authLoading, user, logoutUser } = useAuth();
+  const { isLoggedIn, loading: authLoading, user, logoutUser, token } = useAuth();
   const [authPage, setAuthPage] = useState('login');
 
   const {
@@ -19,7 +19,7 @@ export default function App() {
     status, loading, loadingText,
     history, activeId,
     generate, openFromHistory, deleteFromHistory, newGraph, expandNode,
-  } = useKnowledgeGraph(user?.id);
+  } = useKnowledgeGraph(user?.id, token);
 
   const [leftCollapsed, setLeftCollapsed] = useState(false);
 
