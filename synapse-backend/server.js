@@ -5,7 +5,7 @@ const cors = require('cors');
 const app = express();
 
 const authRoutes = require('./routes/auth');
-const graphRoutes = require('./synapse-backend/routes/graphs');
+const graphRoutes = require('./routes/graphs');
 
 
 app.use(cors({

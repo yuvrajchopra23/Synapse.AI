@@ -20,6 +20,9 @@ router.get('/', async(req, res)=> {
 });
 
 // POST/api/graphs - save a new graph
+router.get('/test', (req, res) => {
+  res.json({ message: 'Graphs route mounted!' });
+});
 
 router.post('/', async(req, res) =>{
     try{
