@@ -4,7 +4,6 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const graphRoutes = require('./routes/graphs');
-app.use('/api/graphs', graphRoutes);
 const app = express();
 
 app.use(cors({
@@ -15,7 +14,7 @@ app.use(cors({
 app.use(express.json());//parse JSON request bodies
 
 app.use('/api/auth', authRoutes);//mount auth routes - all auth endpoints start with /api/auth
-
+app.use('/api/graphs', graphRoutes);
 //simple test route
 app.get('/', (req, res) =>{
     res.json({message: "synapse Backend is running"});
