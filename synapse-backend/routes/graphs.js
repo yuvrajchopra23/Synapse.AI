@@ -10,7 +10,7 @@ router.use(authMiddleware);
 // get/api/graphs - fetch all graphs for logged-in-users
 router.get('/', async(req, res)=> {
     try{
-        const graphs = await Graphlfind({userId: req.userId}).sort({ createdAt: -1}).select('-__v');
+        const graphs = await Graph.find({userId: req.userId}).sort({ createdAt: -1}).select('-__v');
 
         res.json(graphs);
     }catch(err){
