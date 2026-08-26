@@ -2,9 +2,11 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const authRoutes = require('./routes/auth');
-const graphRoutes = require('./routes/graphs');
 const app = express();
+
+const authRoutes = require('./routes/auth');
+const graphRoutes = require('./synapse-backend/routes/graphs');
+
 
 app.use(cors({
   origin: '*',  // allow ALL origins during development
