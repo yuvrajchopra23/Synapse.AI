@@ -34,7 +34,7 @@ router.post('/', async(req, res) =>{
             graph,
         });
 
-        res.status(201).json(newgraph);
+        res.status(201).json(newGraph);
     }catch(err){
         console.error(err);
         res.status(500).json({ error: 'Failed to save the graph'});
