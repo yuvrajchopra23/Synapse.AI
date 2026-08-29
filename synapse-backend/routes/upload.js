@@ -90,12 +90,17 @@ router.post('/', upload.array('files', 10), async (req, res) => {
       return res.status(400).json({ error: 'Could not extract readable text from any uploaded files.' });
     }
 
-    // ← THIS WAS THE BUG — mergedText was never defined before
+    // Limit each file's text so multiple files don't overflow
     const mergedText = valid
-      .map(r => `=== SOURCE: ${r.filename} ===\n${r.text}`)
-      .join('\n\n');
+    .map(r => {
+    // Give each file equal share of the budget
+    const perFileLimit = Math.floor(6000 / valid.length);
+    const limitedText  = r.text.substring(0, perFileLimit);
+    return `=== SOURCE: ${r.filename} ===\n${limitedText}`;
+    })
+    .join('\n\n');
 
-    const truncated = mergedText.substring(0, 12000);
+    const truncated = mergedText.substring(0, 6000);
 
     res.json({
       text:       truncated,
