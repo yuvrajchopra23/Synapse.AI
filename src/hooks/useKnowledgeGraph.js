@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { generateGraphData, expandNodeData, generateGraphFromFilesAndInternet, expandNodeFromFiles } from "../utils/GroqApi";
+import { generateGraphData, expandNodeData,generateGraphFromFiles, generateGraphFromFilesAndInternet, expandNodeFromFiles } from "../utils/GroqApi";
 import { fetchGraphs, saveGraph, updateGraph, deleteGraph } from "../utils/graphApi";
 import { extractTextFromFiles } from "../utils/uploadApi";
 
@@ -300,8 +300,8 @@ export function useKnowledgeGraph(userId, token) {
 
   const handleExpandUseInternet = useCallback(()=>{
     setShowExpandDialog(false);
-    if(PendingExpand) { 
-        expandFromInternet(PendingExpand.nodeId, pendingExpand.nodeLabel);
+    if(pendingExpand) { 
+        expandFromInternet(pendingExpand.nodeId, pendingExpand.nodeLabel);
         setPendingExpand(null);
     }
   }, [pendingExpand, expandFromInternet]);
@@ -324,7 +324,6 @@ export function useKnowledgeGraph(userId, token) {
     expandNode,
     //file state
     uploadedFiles,
-    extractedFiles,
     internetOn,
     setInternetOn,
     addFiles,

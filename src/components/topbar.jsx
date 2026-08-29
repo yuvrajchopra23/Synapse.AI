@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import './topbar.css';
 
 export default function Topbar({ onGenerate, loading, user, onLogout, onFilesAdded }) {
@@ -48,7 +48,7 @@ export default function Topbar({ onGenerate, loading, user, onLogout, onFilesAdd
         disabled = {loading}
       >↑ Files
       </button>
-      
+
       <button
         className="topbar__btn"
         onClick={handleSubmit}
