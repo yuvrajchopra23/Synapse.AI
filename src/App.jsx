@@ -63,7 +63,7 @@ export default function App() {
       {/*file bar- shows when files are uploaded */}
       <FileBar
         files={uploadedFiles}
-        onRemove={removeFiles}
+        onRemove={removeFile}
         internetOn={internetOn}
         onToggleInternet={()=> setInternetOn(p => !p)}
       />
