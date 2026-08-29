@@ -17,7 +17,7 @@ function getFileIcon(filename){
 }
 
 export default function FileBar({ files, onRemove, internetOn, onToggleInternet}){
-    if(files.length === 0) return null;
+    if(!files || files.length === 0) return null;
 
     return (
         <div className ="filebar">

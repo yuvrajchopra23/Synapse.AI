@@ -81,7 +81,7 @@ export function useKnowledgeGraph(userId, token) {
   const generate = useCallback(async (topic) => {
     const hasFiles = uploadedFiles.length > 0;
     //if no files and no internet - ask for input
-    if(!hasFiles && !internetOn){
+    if(!hasFiles && !topic?.trim() && !internetOn){
         setStatus({
             text: "PLEASE UPLOAD FILES OR ENABLE INTERNET TO GENERATE",
             active: false,
@@ -90,6 +90,7 @@ export function useKnowledgeGraph(userId, token) {
     }
 
     setLoading(true);
+    setLoadingText("Starting...");
     setError(null);
     setSelected(null);
     setStatus({ text: "GENERATING GRAPH...", active: false });
@@ -139,7 +140,7 @@ export function useKnowledgeGraph(userId, token) {
 
       const entry = {
         id: saved._id,   // MongoDB _id
-        topic,
+        topic: graphTopic,
         graph: data,
         createdAt: saved.createdAt,
       };
@@ -208,7 +209,7 @@ export function useKnowledgeGraph(userId, token) {
         setLoadingText(`Searching files for "${nodeLabel}"...`);
 
         try{
-            const result = await expandNodeFromFiles(nodeLabel. rootTopic, extractedText);
+            const result = await expandNodeFromFiles(nodeLabel, rootTopic, extractedText);
 
             if(result.insufficient || !result.nodes || result.nodes.length === 0){
                 //Not enough content in files - show dialog
