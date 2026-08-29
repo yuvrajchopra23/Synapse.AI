@@ -21,7 +21,7 @@ export default function App() {
     status, loading, loadingText,
     history, activeId,
     generate, openFromHistory, deleteFromHistory, newGraph, expandNode,
-    uploadedFiles, internetOn, setInternetOn, addFiles, removeFiles,
+    uploadedFiles, internetOn, setInternetOn, addFiles, removeFile,
     showExpandDialog, pendingExpand, handleExpandKeep, handleExpandUseInternet
   } = useKnowledgeGraph(user?.id, token);
 

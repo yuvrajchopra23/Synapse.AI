@@ -327,7 +327,7 @@ export function useKnowledgeGraph(userId, token) {
     internetOn,
     setInternetOn,
     addFiles,
-    removeFiles,
+    removeFile,
     clearFiles,
     //expandDialog
     showExpandDialog,
