@@ -237,3 +237,233 @@ Return ONLY the JSON object, nothing else.`;
   parsed.nodes = (parsed.nodes || []).map(normalizeNode);
   return parsed;
 }
+
+//GENERATE THE GRAPH FROM FILES ONLY:.....
+export async function generateGraphFromFiles(mergedText, filenames){
+  const system = `
+  You are a Knowledge Graph Generator and Educational Content Expert.
+
+  You will recieve raw extracted text from one or more documents (PDF, PPT, DOCX, XLSX).
+  Your job is to: 
+  1. UNDERSTAND the content deeply
+  2. STRUCTURE it into a proper, organized knowledge graph
+  3. Generate clear descriptions, examples, and quiz questions
+  4. ONLY use information present in or directly implied by the provided content
+  5. NEVER add external facts not found in the documents
+  6. Present the content in a clean, educational way - not as raw bullet points
+
+  Return ONLY valid JSON. No markdown. No extra text.
+
+  Format:
+{
+  "root": {
+    "id": "root",
+    "label": "Main topic (2-4 words)",
+    "notes": {
+      "overview": "3-4 sentence explanation based on the document content.",
+      "keyConcepts": ["concept from document", "concept from document"],
+      "example": "Example found in or derived from the document.",
+      "keyPoints": ["key point from doc", "key point from doc"]
+    },
+    "questions": [
+      {
+        "q": "Question based strictly on document content?",
+        "a": "Answer found in the document.",
+        "explanation": "Deeper explanation based on document content."
+      }
+    ],
+    "links": {
+      "website": "",
+      "youtube": "",
+      "references": []
+    }
+  },
+  "nodes": [
+    {
+      "id": "n1",
+      "label": "Subtopic (2-4 words)",
+      "tier": 1,
+      "notes": {
+        "overview": "Explanation based on document content.",
+        "keyConcepts": ["concept 1", "concept 2"],
+        "example": "Example from document.",
+        "keyPoints": ["takeaway 1", "takeaway 2"]
+      },
+      "questions": [
+        {
+          "q": "Question about this subtopic from the document?",
+          "a": "Answer from document.",
+          "explanation": "Explanation based on document content."
+        }
+      ],
+      "links": {
+        "website": "",
+        "youtube": "",
+        "references": []
+      }
+    }
+  ],
+  "edges": [
+    { "source": "root", "target": "n1" }
+  ]
+}
+
+RULES:
+- Extract the MAIN TOPIC from the document content as root
+- Create nodes for every major topic/section in the documents
+- Maximum 10 tier-1 nodes
+- tier 2 nodes for subtopics within sections
+- Keep labels SHORT: 2-4 words
+- Base ALL content strictly on provided document text
+- Structure and clarify the content — but never add outside information
+- Return ONLY the JSON object`;
+
+  const fileList = filenames.join(', ');
+  const raw = await callGroq(
+    `Files: ${fileList}\n\nDocument content:\n${mergedText}`,
+    system
+  );
+
+  const parsed = parseJSON(raw);
+  parsed.root = normalizeNode(parsed.root);
+  parsed.nodes = (parsed.nodes || []).map(normalizeNode);
+  return parsed;
+}
+
+//Mode 3: Generate graph from files + internet....
+
+export async function generateGraphFromFilesAndInternet(mergedText, filenames, topic){
+    const system = `
+You are a Knowledge Graph Generator and Educational Content Expert.
+
+You will receive:
+1. Raw extracted text from uploaded documents
+2. A topic name to search your knowledge for additional context
+
+Your job is to:
+1. Use the document content as the PRIMARY source
+2. ENHANCE it with your broader knowledge of the topic
+3. Fill in gaps, add context, and deepen explanations
+4. Clearly structure everything into a knowledge graph
+5. Generate rich descriptions, examples, and quiz questions
+
+Return ONLY valid JSON. No markdown. No extra text.
+
+Format: (same as generateGraphFromFiles above)
+{
+  "root": {
+    "id": "root",
+    "label": "Main topic (2-4 words)",
+    "notes": {
+      "overview": "Rich explanation combining document + broader knowledge.",
+      "keyConcepts": ["concept 1", "concept 2", "concept 3"],
+      "example": "Detailed real-world example.",
+      "keyPoints": ["key takeaway 1", "key takeaway 2", "key takeaway 3"]
+    },
+    "questions": [
+      {
+        "q": "Deep question about this topic?",
+        "a": "Complete accurate answer.",
+        "explanation": "Deeper explanation."
+      }
+    ],
+    "links": {
+      "website": "",
+      "youtube": "",
+      "references": []
+    }
+  },
+  "nodes": [
+    {
+      "id": "n1",
+      "label": "Subtopic (2-4 words)",
+      "tier": 1,
+      "notes": {
+        "overview": "Enhanced explanation.",
+        "keyConcepts": ["concept 1", "concept 2"],
+        "example": "Concrete example.",
+        "keyPoints": ["takeaway 1", "takeaway 2"]
+      },
+      "questions": [
+        {
+          "q": "Question about this subtopic?",
+          "a": "Complete answer.",
+          "explanation": "Deeper explanation."
+        }
+      ],
+      "links": {
+        "website": "",
+        "youtube": "",
+        "references": []
+      }
+    }
+  ],
+  "edges": [{ "source": "root", "target": "n1" }]
+}
+
+RULES:
+- Document content is PRIMARY — always include everything from it
+- Your broader knowledge is SECONDARY — use it to enhance, not replace
+- Maximum 10 tier-1 nodes
+- Keep labels SHORT: 2-4 words
+- Return ONLY the JSON object`;
+
+const fileList = filenames.join(', ');
+const raw = await callGroq(
+  `Topic: "${topic}"\n Files: ${fileList}\n\nDocument content: \n${mergedText}`,
+  system
+);
+
+const parsed = parseJSON(raw);
+parsed.root = normalizeNode(parsed.root);
+parsed.nodes = (parsed.nodes || []).map(normalizeNode);
+return parsed;
+}
+
+//expand node from file content only
+export async function expandNodeFromFiles(nodeLabel, rootTopic, fileText) {
+  const system = `
+You are a Knowledge Graph Generator.
+Return ONLY valid JSON, no markdown, no extra text.
+
+You will receive content from uploaded documents.
+Generate exactly 3 child subtopics for the given concept.
+Use ONLY information found in the provided document content.
+If you cannot find enough content to generate 3 meaningful subtopics,
+return what you can find and set "insufficient": true.
+
+{
+  "insufficient": false,
+  "nodes": [
+    {
+      "id": "placeholder",
+      "label": "Child label (2-4 words)",
+      "notes": {
+        "overview": "Explanation from document content.",
+        "keyConcepts": ["concept 1", "concept 2"],
+        "example": "Example from document.",
+        "keyPoints": ["takeaway 1", "takeaway 2"]
+      },
+      "questions": [
+        {
+          "q": "Question from document content?",
+          "a": "Answer from document.",
+          "explanation": "Explanation from document."
+        }
+      ],
+      "links": { "website": "", "youtube": "", "references": [] }
+    }
+  ]
+}`;
+
+  const raw = await callGroq(
+    `Root topic: "${rootTopic}"\nExpand subtopic: "${nodeLabel}"\n\nDocument content:\n${fileText}`,
+    system
+  );
+
+  const parsed = parseJSON(raw);
+  if (parsed.nodes) {
+    parsed.nodes = parsed.nodes.map(normalizeNode);
+  }
+  return parsed; // { insufficient: bool, nodes: [] }
+}

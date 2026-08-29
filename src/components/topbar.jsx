@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import './topbar.css';
 
-export default function Topbar({ onGenerate, loading, user, onLogout }) {
+export default function Topbar({ onGenerate, loading, user, onLogout, onFilesAdded }) {
   const [topic, setTopic] = useState('');
+  const fileInputRef = useRef(null);
 
   function handleSubmit() {
-    if (!loading && topic.trim()) onGenerate(topic.trim());
+    if (!loading) onGenerate(topic.trim());
   }
 
   return (
@@ -23,11 +24,31 @@ export default function Topbar({ onGenerate, loading, user, onLogout }) {
           value={topic}
           onChange={e => setTopic(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-          placeholder="Enter a topic — e.g. Quantum Computing, Neural Networks..."
+          placeholder="Enter a topic or upload files below..."
           disabled={loading}
         />
       </div>
-
+      <input 
+        type ="file"
+        ref = {fileInputRef}
+        accept='.pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.txt'
+        multiple
+        style={{display: 'none'}}
+        onChange={e =>{
+          if (e.target.files?.length > 0){
+            onFilesAdded(e.target.files);
+            e.target.value = '';
+          }
+        }}
+        />
+      <button
+        className="topbar__upload"
+        onClick={()=>fileInputRef.current?.click()}
+        title="Upload PDF, PPT, DOCX, XLSX"
+        disabled = {loading}
+      >↑ Files
+      </button>
+      
       <button
         className="topbar__btn"
         onClick={handleSubmit}

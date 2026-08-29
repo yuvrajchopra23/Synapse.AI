@@ -5,6 +5,8 @@ import GraphCanvas   from './components/Graphcanvas';
 import Sidebar       from './components/sidebar';
 import LeftSidebar   from './components/LeftSidebar';
 import BottomNav     from './components/BottomNav';
+import FileBar       from './components/FileBar';
+import ExpandDialog  from './components/ExpandDialog'
 import Login         from './components/Login';
 import Signup        from './components/Signup';
 import { useKnowledgeGraph } from './hooks/useKnowledgeGraph';
@@ -19,6 +21,8 @@ export default function App() {
     status, loading, loadingText,
     history, activeId,
     generate, openFromHistory, deleteFromHistory, newGraph, expandNode,
+    uploadedFiles, internetOn, setInternetOn, addFiles, removeFiles,
+    showExpandDialog, pendingExpand, handleExpandKeep, handleExpandUseInternet
   } = useKnowledgeGraph(user?.id, token);
 
   const [leftCollapsed, setLeftCollapsed] = useState(false);
@@ -54,6 +58,14 @@ export default function App() {
         loading={loading}
         user={user}
         onLogout={logoutUser}
+        onFilesAdded={addFiles}
+      />
+      {/*file bar- shows when files are uploaded */}
+      <FileBar
+        files={uploadedFiles}
+        onRemove={removeFiles}
+        internetOn={internetOn}
+        onToggleInternet={()=> setInternetOn(p => !p)}
       />
 
       <div className="app__main">
@@ -105,6 +117,16 @@ export default function App() {
         <div className={`app__dot ${status.active ? 'app__dot--active' : ''}`} />
         <span className="app__status-text">{status.text}</span>
       </div>
+      {/* Expand dialog - shown when file expansion has no content */}
+    {showExpandDialog && (
+      <ExpandDialog
+      nodeLabel={pendingExpand?.nodeLabel}
+      onKeep={handleExpandKeep}
+      onUseInternet={handleExpandUseInternet}
+      onClose={handleExpandKeep}
+      />
+    )}
     </div>
+    
   );
 }

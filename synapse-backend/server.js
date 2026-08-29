@@ -7,6 +7,7 @@ const app = express();
 const authRoutes = require('./routes/auth');
 const graphRoutes = require('./routes/graphs');
 
+const uploadRoutes = require('./routes/upload');
 
 app.use(cors({
   origin: '*',  // allow ALL origins during development
@@ -14,7 +15,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));//allow requests from react app(different port)
 app.use(express.json());//parse JSON request bodies
-
+app.use('/api/upload', uploadRoutes);
 app.use('/api/auth', authRoutes);//mount auth routes - all auth endpoints start with /api/auth
 app.use('/api/graphs', graphRoutes);
 //simple test route

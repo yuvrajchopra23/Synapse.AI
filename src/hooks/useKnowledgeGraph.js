@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
-import { generateGraphData, expandNodeData } from "../utils/GroqApi";
+import { generateGraphData, expandNodeData, generateGraphFromFilesAndInternet, expandNodeFromFiles } from "../utils/GroqApi";
 import { fetchGraphs, saveGraph, updateGraph, deleteGraph } from "../utils/graphApi";
+import { extractTextFromFiles } from "../utils/uploadApi";
 
 export function useKnowledgeGraph(userId, token) {
   const [graph, setGraph]             = useState(null);
@@ -15,6 +16,15 @@ export function useKnowledgeGraph(userId, token) {
   const [error, setError]             = useState(null);
   const [history, setHistory]         = useState([]);
   const [activeId, setActiveId]       = useState(null);
+
+  //File State
+  const [uploadedFiles, setUploadedFiles] = useState([]);//file objects
+  const [extractedText, setExtractedText] = useState(''); //merged text from files
+  const [internetOn, setInternetOn] = useState(true);//internet toggle
+  const [showExpandDialog, setShowExpandDialog] = useState(false);
+  const [pendingExpand, setPendingExpand] = useState(null) //{nodeId, nodelabel}
+
+
 
   // ── Load history from MongoDB when user logs in ───────────
   useEffect(() => {
@@ -50,21 +60,82 @@ export function useKnowledgeGraph(userId, token) {
     setStatus({ text: "READY - ENTER TOPIC TO BEGIN", active: false });
   }, [userId, token]);
 
+  //Add Files
+  const addFiles = useCallback((newFiles) => {
+    setUploadedFiles(prev => [...prev, ...Array.from(newFiles)]);
+  }, []);
+
+  //Remove a file
+  const removeFile = useCallback((index) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+    if (uploadedFiles.length <= 1) setExtractedText('');
+  }, [uploadedFiles]);
+
+  //clear all files
+  const clearFiles = useCallback(() => {
+    setUploadedFiles([]);
+    setExtractedText('');
+  }, []);
+
   // ── Generate graph ────────────────────────────────────────
   const generate = useCallback(async (topic) => {
-    if (!topic.trim()) return;
+    const hasFiles = uploadedFiles.length > 0;
+    //if no files and no internet - ask for input
+    if(!hasFiles && !internetOn){
+        setStatus({
+            text: "PLEASE UPLOAD FILES OR ENABLE INTERNET TO GENERATE",
+            active: false,
+        });
+        return;
+    }
+
     setLoading(true);
-    setLoadingText("Generating knowledge graph...");
     setError(null);
     setSelected(null);
-    setRootTopic(topic);
     setStatus({ text: "GENERATING GRAPH...", active: false });
 
     try {
-      const data = await generateGraphData(topic);
+      let data;
+      let graphTopic = topic;
+
+      if (hasFiles) {
+        setLoadingText("Reading your files...");
+        const extracted = await extractTextFromFiles(uploadedFiles);
+        setExtractedText(extracted.text);
+
+        const filenames = extracted.files.map(f => f.filename);
+        graphTopic = filenames[0].replace(/\.[^/.]+$/, '');
+
+        if (internetOn && topic){
+            //Mode3. files + internet
+            setLoadingText("Generating from files + internet...");
+            setRootTopic(topic || graphTopic);
+            data = await generateGraphFromFilesAndInternet(
+                extracted.text,
+                filenames,
+                topic || graphTopic
+            );
+        }else{
+            //Mode2. files only
+            setLoadingText("Generating from your Files Only");
+            setRootTopic(graphTopic);
+            data = await generateGraphFromFiles(extracted.text, filenames);
+        }
+      }else{
+        //Mode1. Topic only (internet)
+        if(!topic?.trim()){
+            setStatus({text: "PLEASE ENTER A TOPIC", active: false});
+            setLoading(false);
+            return;
+        }
+        setLoadingText("Generating knowledge graph...");
+        setRootTopic(topic);
+        data = await generateGraphData(topic);
+        graphTopic = topic;
+      }
 
       // Save to MongoDB
-      const saved = await saveGraph(topic, data);
+      const saved = await saveGraph(graphTopic, data);
 
       const entry = {
         id: saved._id,   // MongoDB _id
@@ -88,7 +159,7 @@ export function useKnowledgeGraph(userId, token) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [uploadedFiles, internetOn]);
 
   // ── Open from history ─────────────────────────────────────
   const openFromHistory = useCallback((entry) => {
@@ -129,6 +200,40 @@ export function useKnowledgeGraph(userId, token) {
 
   // ── Expand node ───────────────────────────────────────────
   const expandNode = useCallback(async (nodeId, nodeLabel) => {
+    const hasFiles = extractedText.length > 0;
+
+    if(hasFiles && !internetOn){
+        //file only mode - try to expand from file content
+        setLoading(true);
+        setLoadingText(`Searching files for "${nodeLabel}"...`);
+
+        try{
+            const result = await expandNodeFromFiles(nodeLabel. rootTopic, extractedText);
+
+            if(result.insufficient || !result.nodes || result.nodes.length === 0){
+                //Not enough content in files - show dialog
+                setPendingExpand({nodeId, nodeLabel});
+                setShowExpandDialog(true);
+                setLoading(false);
+                return;
+            }
+            //Got nodes from file - add them to graph
+            applyExpandedNodes(nodeId, result.nodes);
+
+        }catch(err){
+            setError(err.message);
+            setStatus({text: "FAILED TO EXPAND", active: false});
+        }finally{
+            setLoading(false);
+        }
+    } else {
+        //internet mode - expand normally
+        await expandFromInternet(nodeId, nodeLabel);
+    }
+    },[extractedText, internetOn, rootTopic]);
+
+    //Expand using internet (called directly or from dialog)
+    const expandFromInternet = useCallback(async(nodeId, nodeLabel) => {
     setLoading(true);
     setLoadingText(`Expanding "${nodeLabel}"...`);
     setError(null);
@@ -139,7 +244,19 @@ export function useKnowledgeGraph(userId, token) {
 
     try {
       const { nodes: children } = await expandNodeData(nodeLabel, rootTopic);
+        applyExpandedNodes(nodeId, children);
+    }catch(err){
+        setError(err.message);
+        setStatus({text: "FAILED TO EXPAND - TRY AGAIN", active: false});
+    }finally{
+        setLoading(false);
+    }
+    
+},[rootTopic]);
 
+//apply expanded nodes to graph
+
+    const applyExpandedNodes = useCallback((nodeId, children) => {
       const ts = Date.now();
       const newNodes = children.map((n, i) => ({
         ...n,
@@ -173,13 +290,21 @@ export function useKnowledgeGraph(userId, token) {
       });
 
       setStatus({ text: `EXPANDED GRAPH UPDATED`, active: true });
-    } catch (err) {
-      setError(err.message);
-      setStatus({ text: `FAILED TO EXPAND - TRY AGAIN`, active: false });
-    } finally {
-      setLoading(false);
+  }, [activeId]);
+
+  //Handle expand dialog responses
+  const handleExpandKeep = useCallback(() => {
+    setShowExpandDialog(false);
+    setPendingExpand(null);
+  }, []);
+
+  const handleExpandUseInternet = useCallback(()=>{
+    setShowExpandDialog(false);
+    if(PendingExpand) { 
+        expandFromInternet(PendingExpand.nodeId, pendingExpand.nodeLabel);
+        setPendingExpand(null);
     }
-  }, [rootTopic, activeId]);
+  }, [pendingExpand, expandFromInternet]);
 
   return {
     graph,
@@ -197,5 +322,18 @@ export function useKnowledgeGraph(userId, token) {
     error,
     generate,
     expandNode,
+    //file state
+    uploadedFiles,
+    extractedFiles,
+    internetOn,
+    setInternetOn,
+    addFiles,
+    removeFiles,
+    clearFiles,
+    //expandDialog
+    showExpandDialog,
+    pendingExpand,
+    handleExpandKeep,
+    handleExpandUseInternet
   };
 }

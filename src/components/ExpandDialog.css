@@ -1,0 +1,76 @@
+.expand-dialog__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.expand-dialog {
+  background: var(--bg-surface);
+  border: 0.5px solid var(--border-mid);
+  border-radius: var(--radius-lg);
+  padding: 28px 24px;
+  max-width: 360px;
+  width: 100%;
+}
+
+.expand-dialog__icon {
+  font-size: 24px;
+  margin-bottom: 12px;
+  color: #c8a84b;
+}
+
+.expand-dialog__title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+
+.expand-dialog__body {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin-bottom: 8px;
+}
+.expand-dialog__body strong {
+  color: var(--text-primary);
+}
+
+.expand-dialog__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.expand-dialog__btn {
+  flex: 1;
+  padding: 9px;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+
+.expand-dialog__btn--secondary {
+  background: none;
+  border: 0.5px solid var(--border-mid);
+  color: var(--text-secondary);
+}
+.expand-dialog__btn--secondary:hover {
+  border-color: var(--border-bright);
+  color: var(--text-primary);
+}
+
+.expand-dialog__btn--primary {
+  background: var(--text-primary);
+  border: none;
+  color: var(--bg-base);
+}
+.expand-dialog__btn--primary:hover {
+  background: var(--text-white);
+}

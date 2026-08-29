@@ -1,0 +1,93 @@
+.filebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--bg-surface);
+  border-bottom: 0.5px solid var(--border-dim);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.filebar__files {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.filebar__file {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-elevated);
+  border: 0.5px solid var(--border-mid);
+  border-radius: var(--radius-md);
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  max-width: 180px;
+}
+
+.filebar__file-icon { font-size: 12px; flex-shrink: 0; }
+
+.filebar__file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filebar__file-remove {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 10px;
+  padding: 0 2px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.filebar__file-remove:hover { color: #cc5555; }
+
+.filebar__controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.filebar__label {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  letter-spacing: 0.05em;
+}
+
+.filebar__toggle {
+  padding: 4px 10px;
+  background: var(--bg-elevated);
+  border: 0.5px solid var(--border-mid);
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  transition: all 0.15s;
+}
+.filebar__toggle--on {
+  border-color: var(--accent-active);
+  color: var(--accent-active);
+}
+
+.filebar__hint {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 768px) {
+  .filebar {
+    padding: 6px 12px;
+  }
+  .filebar__hint { display: none; }
+}
