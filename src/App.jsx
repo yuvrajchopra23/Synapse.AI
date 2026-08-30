@@ -59,13 +59,13 @@ export default function App() {
         user={user}
         onLogout={logoutUser}
         onFilesAdded={addFiles}
+        internetOn={internetOn}
+        onToggleInternet={()=> setInternetOn(p => !p)}
       />
       {/*file bar- shows when files are uploaded */}
       <FileBar
         files={uploadedFiles}
         onRemove={removeFile}
-        internetOn={internetOn}
-        onToggleInternet={()=> setInternetOn(p => !p)}
       />
 
       <div className="app__main">

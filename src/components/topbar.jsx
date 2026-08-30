@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import './topbar.css';
 
-export default function Topbar({ onGenerate, loading, user, onLogout, onFilesAdded }) {
+export default function Topbar({ onGenerate, loading, user, onLogout, onFilesAdded, internetOn, onToggleInternet }) {
   const [topic, setTopic] = useState('');
   const fileInputRef = useRef(null);
 
@@ -68,6 +68,16 @@ export default function Topbar({ onGenerate, loading, user, onLogout, onFilesAdd
         type="button"
       >
         ↑ Files
+      </button>
+      
+      {/* Internet toggle — always visible */}
+      <button
+        className={`topbar__internet ${internetOn ? 'topbar__internet--on' : ''}`}
+        onClick={onToggleInternet}
+        title={internetOn ? 'Internet ON — click to disable' : 'Internet OFF — click to enable'}
+        type="button"
+      >
+        {internetOn ? '🌐 ON' : '🌐 OFF'}
       </button>
 
       <button

@@ -143,3 +143,30 @@
     font-size: 11px;
   }
 }
+.topbar__internet {
+  padding: 7px 12px;
+  background: none;
+  border: 0.5px solid var(--border-mid);
+  border-radius: var(--radius-md);
+  color: var(--text-dim);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.topbar__internet:hover {
+  border-color: var(--border-bright);
+  color: var(--text-primary);
+}
+.topbar__internet--on {
+  border-color: var(--accent-active);
+  color: var(--accent-active);
+}
+
+@media (max-width: 768px) {
+  .topbar__internet {
+    padding: 7px 8px;
+    font-size: 10px;
+  }
+}

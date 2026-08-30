@@ -16,7 +16,7 @@ function getFileIcon(filename){
     return icons[ext] || '📎';
 }
 
-export default function FileBar({ files, onRemove, internetOn, onToggleInternet}){
+export default function FileBar({ files = [], onRemove}){
     if(!files || files.length === 0) return null;
 
     return (
@@ -37,20 +37,8 @@ export default function FileBar({ files, onRemove, internetOn, onToggleInternet}
                 ))}
             </div>
 
-            <div className="filebar__controls">
-                <span className="filebar__label">Use internet:</span>
-                <button
-                    className={`filebar__toggle ${internetOn ? 'filebar__toggle--on' : ''}`}
-                    onClick={onToggleInternet}
-                >
-                {internetOn ? 'ON' : 'OFF'}
-                </button>
-            {!internetOn && (
-            <span className="filebar__hint">Graph will use file content only</span>
-            )}
-            {internetOn && (
-            <span className="filebar__hint">File content + internet knowledge</span>
-            )}
+            <div className="filebar__note">
+               ⓘ Files must contain selectable text — scanned/image PDFs not supported
         </div> 
     </div>
     );
