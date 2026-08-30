@@ -113,3 +113,33 @@
     gap: 6px;
   }
 }
+
+.topbar__upload {
+  padding: 8px 14px;
+  background: none;
+  border: 0.5px solid var(--border-mid);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  font-family: var(--font-sans);
+}
+.topbar__upload:hover:not(:disabled) {
+  border-color: var(--border-bright);
+  color: var(--text-primary);
+}
+.topbar__upload:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .topbar__upload {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+}
