@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { generateGraphData, expandNodeData,generateGraphFromFiles, generateGraphFromFilesAndInternet, expandNodeFromFiles } from "../utils/GroqApi";
+import { generateGraphData, expandNodeData, generateGraphFromFiles, generateGraphFromFilesAndInternet, expandNodeFromFiles } from "../utils/GroqApi";
 import { fetchGraphs, saveGraph, updateGraph, deleteGraph } from "../utils/graphApi";
 import { extractTextFromFiles } from "../utils/uploadApi";
 
@@ -17,14 +17,12 @@ export function useKnowledgeGraph(userId, token) {
   const [history, setHistory]         = useState([]);
   const [activeId, setActiveId]       = useState(null);
 
-  //File State
-  const [uploadedFiles, setUploadedFiles] = useState([]);//file objects
-  const [extractedText, setExtractedText] = useState(''); //merged text from files
-  const [internetOn, setInternetOn] = useState(true);//internet toggle
+  // File State
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [extractedText, setExtractedText] = useState('');
+  const [internetOn, setInternetOn]       = useState(true);
   const [showExpandDialog, setShowExpandDialog] = useState(false);
-  const [pendingExpand, setPendingExpand] = useState(null) //{nodeId, nodelabel}
-
-
+  const [pendingExpand, setPendingExpand] = useState(null);
 
   // ── Load history from MongoDB when user logs in ───────────
   useEffect(() => {
@@ -38,12 +36,13 @@ export function useKnowledgeGraph(userId, token) {
     async function loadHistory() {
       try {
         const graphs = await fetchGraphs();
-        // Convert MongoDB format to our app format
         const formatted = graphs.map(g => ({
-          id: g._id,      // use MongoDB _id as our id
-          topic: g.topic,
-          graph: g.graph,
-          createdAt: g.createdAt,
+          id:            g._id,
+          topic:         g.topic,
+          graph:         g.graph,
+          createdAt:     g.createdAt,
+          sourceFiles:   g.sourceFiles   || [],
+          extractedText: g.extractedText || '',
         }));
         setHistory(formatted);
       } catch (err) {
@@ -52,7 +51,6 @@ export function useKnowledgeGraph(userId, token) {
     }
 
     loadHistory();
-    // Clear current graph when user changes
     setGraph(null);
     setActiveId(null);
     setSelected(null);
@@ -60,18 +58,21 @@ export function useKnowledgeGraph(userId, token) {
     setStatus({ text: "READY - ENTER TOPIC TO BEGIN", active: false });
   }, [userId, token]);
 
-  //Add Files
+  // ── Add files ─────────────────────────────────────────────
   const addFiles = useCallback((newFiles) => {
     setUploadedFiles(prev => [...prev, ...Array.from(newFiles)]);
   }, []);
 
-  //Remove a file
+  // ── Remove a file ─────────────────────────────────────────
   const removeFile = useCallback((index) => {
-    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
-    if (uploadedFiles.length <= 1) setExtractedText('');
-  }, [uploadedFiles]);
+    setUploadedFiles(prev => {
+      const updated = prev.filter((_, i) => i !== index);
+      if (updated.length === 0) setExtractedText('');
+      return updated;
+    });
+  }, []);
 
-  //clear all files
+  // ── Clear all files ───────────────────────────────────────
   const clearFiles = useCallback(() => {
     setUploadedFiles([]);
     setExtractedText('');
@@ -80,13 +81,11 @@ export function useKnowledgeGraph(userId, token) {
   // ── Generate graph ────────────────────────────────────────
   const generate = useCallback(async (topic) => {
     const hasFiles = uploadedFiles.length > 0;
-    //if no files and no internet - ask for input
-    if(!hasFiles && !topic?.trim() && !internetOn){
-        setStatus({
-            text: "PLEASE UPLOAD FILES OR ENABLE INTERNET TO GENERATE",
-            active: false,
-        });
-        return;
+
+    // Block only if nothing to work with
+    if (!hasFiles && !topic?.trim()) {
+      setStatus({ text: "PLEASE ENTER A TOPIC OR UPLOAD FILES", active: false });
+      return;
     }
 
     setLoading(true);
@@ -97,63 +96,76 @@ export function useKnowledgeGraph(userId, token) {
 
     try {
       let data;
-      let graphTopic = topic;
+      let graphTopic = topic || '';
+      let filenames  = [];
+      let fileText   = '';
 
       if (hasFiles) {
+        // ── Step 1: extract text from files ──────────────────
         setLoadingText("Reading your files...");
         const extracted = await extractTextFromFiles(uploadedFiles);
-        setExtractedText(extracted.text);
+        fileText  = extracted.text;
+        filenames = extracted.files.map(f => f.filename);
+        setExtractedText(fileText);
 
-        const filenames = extracted.files.map(f => f.filename);
-        graphTopic = filenames[0].replace(/\.[^/.]+$/, '');
+        // ── Step 2: generate graph ────────────────────────────
+        if (internetOn && topic?.trim()) {
+          // Mode 3 — files + internet
+          setLoadingText("Generating from files + internet...");
+          data = await generateGraphFromFilesAndInternet(fileText, filenames, topic);
+        } else {
+          // Mode 2 — files only
+          setLoadingText("Generating from your files only...");
+          data = await generateGraphFromFiles(fileText, filenames);
+        }
 
-        if (internetOn && topic){
-            //Mode3. files + internet
-            setLoadingText("Generating from files + internet...");
-            setRootTopic(topic || graphTopic);
-            data = await generateGraphFromFilesAndInternet(
-                extracted.text,
-                filenames,
-                topic || graphTopic
-            );
-        }else{
-            //Mode2. files only
-            setLoadingText("Generating from your Files Only");
-            setRootTopic(graphTopic);
-            data = await generateGraphFromFiles(extracted.text, filenames);
-        }
-      }else{
-        //Mode1. Topic only (internet)
-        if(!topic?.trim()){
-            setStatus({text: "PLEASE ENTER A TOPIC", active: false});
-            setLoading(false);
-            return;
-        }
+        // ── Step 3: use AI root label as graph name ───────────
+        graphTopic = data.root?.label || topic || filenames[0].replace(/\.[^/.]+$/, '');
+        setRootTopic(graphTopic);
+
+        // ── Step 4: save to MongoDB with extracted text ───────
+        const saved = await saveGraph(graphTopic, data, filenames, fileText);
+        const entry = {
+          id:            saved._id,
+          topic:         graphTopic,
+          graph:         data,
+          createdAt:     saved.createdAt,
+          sourceFiles:   filenames,
+          extractedText: fileText,
+        };
+
+        setHistory(prev => [entry, ...(Array.isArray(prev) ? prev : [])]);
+        setActiveId(entry.id);
+        setGraph(data);
+
+      } else {
+        // ── Mode 1: topic only ────────────────────────────────
         setLoadingText("Generating knowledge graph...");
         setRootTopic(topic);
         data = await generateGraphData(topic);
         graphTopic = topic;
+
+        const saved = await saveGraph(graphTopic, data, [], '');
+        const entry = {
+          id:            saved._id,
+          topic:         graphTopic,
+          graph:         data,
+          createdAt:     saved.createdAt,
+          sourceFiles:   [],
+          extractedText: '',
+        };
+
+        setHistory(prev => [entry, ...(Array.isArray(prev) ? prev : [])]);
+        setActiveId(entry.id);
+        setGraph(data);
       }
-
-      // Save to MongoDB
-      const saved = await saveGraph(graphTopic, data);
-
-      const entry = {
-        id: saved._id,   // MongoDB _id
-        topic: graphTopic,
-        graph: data,
-        createdAt: saved.createdAt,
-      };
-
-      setHistory(prev => [entry, ...(Array.isArray(prev) ? prev : [])]);
-      setActiveId(entry.id);
-      setGraph(data);
 
       const total = (data.nodes?.length || 0) + 1;
       setStatus({
         text: `GRAPH GENERATED - ${total} NODES - CLICK TO EXPLORE`,
         active: true
       });
+
     } catch (err) {
       setError(err.message);
       setStatus({ text: "FAILED TO GENERATE GRAPH", active: false });
@@ -168,6 +180,8 @@ export function useKnowledgeGraph(userId, token) {
     setRootTopic(entry.topic);
     setActiveId(entry.id);
     setSelected(null);
+    // Restore extracted text so file-based expansion works after reload
+    setExtractedText(entry.extractedText || '');
     const total = (entry.graph.nodes?.length || 0) + 1;
     setStatus({
       text: `GRAPH LOADED - ${total} NODES - CLICK TO EXPLORE`,
@@ -183,6 +197,7 @@ export function useKnowledgeGraph(userId, token) {
       if (id === activeId) {
         setGraph(null);
         setActiveId(null);
+        setExtractedText('');
         setStatus({ text: "READY - ENTER TOPIC TO BEGIN", active: false });
       }
     } catch (err) {
@@ -195,115 +210,92 @@ export function useKnowledgeGraph(userId, token) {
     setGraph(null);
     setSelected(null);
     setActiveId(null);
-    setRootTopic("");
+    setRootTopic('');
+    setExtractedText('');
     setStatus({ text: "READY - ENTER TOPIC TO BEGIN", active: false });
   }, []);
 
   // ── Expand node ───────────────────────────────────────────
   const expandNode = useCallback(async (nodeId, nodeLabel) => {
-    const hasFiles = extractedText.length > 0;
+    const hasFileText = extractedText.length > 0;
 
-    if(hasFiles && !internetOn){
-        //file only mode - try to expand from file content
-        setLoading(true);
-        setLoadingText(`Searching files for "${nodeLabel}"...`);
+    if (hasFileText && !internetOn) {
+      // File-only mode — try expanding from file content
+      setLoading(true);
+      setLoadingText(`Searching files for "${nodeLabel}"...`);
 
-        try{
-            const result = await expandNodeFromFiles(nodeLabel, rootTopic, extractedText);
+      try {
+        const result = await expandNodeFromFiles(nodeLabel, rootTopic, extractedText);
 
-            if(result.insufficient || !result.nodes || result.nodes.length === 0){
-                //Not enough content in files - show dialog
-                setPendingExpand({nodeId, nodeLabel});
-                setShowExpandDialog(true);
-                setLoading(false);
-                return;
-            }
-            //Got nodes from file - add them to graph
-            applyExpandedNodes(nodeId, result.nodes);
-
-        }catch(err){
-            setError(err.message);
-            setStatus({text: "FAILED TO EXPAND", active: false});
-        }finally{
-            setLoading(false);
+        if (result.insufficient || !result.nodes || result.nodes.length === 0) {
+          setPendingExpand({ nodeId, nodeLabel });
+          setShowExpandDialog(true);
+          setLoading(false);
+          return;
         }
-    } else {
-        //internet mode - expand normally
-        await expandFromInternet(nodeId, nodeLabel);
-    }
-    },[extractedText, internetOn, rootTopic]);
 
-    //Expand using internet (called directly or from dialog)
-    const expandFromInternet = useCallback(async(nodeId, nodeLabel) => {
+        applyExpandedNodes(nodeId, result.nodes);
+      } catch (err) {
+        setError(err.message);
+        setStatus({ text: "FAILED TO EXPAND", active: false });
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // Internet mode — expand normally
+      await expandFromInternet(nodeId, nodeLabel);
+    }
+  }, [extractedText, internetOn, rootTopic]);
+
+  // ── Expand using internet ─────────────────────────────────
+  const expandFromInternet = useCallback(async (nodeId, nodeLabel) => {
     setLoading(true);
     setLoadingText(`Expanding "${nodeLabel}"...`);
     setError(null);
-    setStatus({
-      text: `EXPANDING "${nodeLabel.toUpperCase()}"...`,
-      active: false
-    });
+    setStatus({ text: `EXPANDING "${nodeLabel.toUpperCase()}"...`, active: false });
 
     try {
       const { nodes: children } = await expandNodeData(nodeLabel, rootTopic);
-        applyExpandedNodes(nodeId, children);
-    }catch(err){
-        setError(err.message);
-        setStatus({text: "FAILED TO EXPAND - TRY AGAIN", active: false});
-    }finally{
-        setLoading(false);
+      applyExpandedNodes(nodeId, children);
+    } catch (err) {
+      setError(err.message);
+      setStatus({ text: "FAILED TO EXPAND - TRY AGAIN", active: false });
+    } finally {
+      setLoading(false);
     }
-    
-},[rootTopic]);
+  }, [rootTopic]);
 
-//apply expanded nodes to graph
+  // ── Apply expanded nodes to graph ─────────────────────────
+  const applyExpandedNodes = useCallback((nodeId, children) => {
+    const ts       = Date.now();
+    const newNodes = children.map((n, i) => ({ ...n, id: `exp_${ts}_${i}`, tier: 2 }));
+    const newEdges = newNodes.map(n => ({ source: nodeId, target: n.id }));
 
-    const applyExpandedNodes = useCallback((nodeId, children) => {
-      const ts = Date.now();
-      const newNodes = children.map((n, i) => ({
-        ...n,
-        id: `exp_${ts}_${i}`,
-        tier: 2,
-      }));
+    setGraph(prev => {
+      const updated = {
+        ...prev,
+        nodes: [...(prev.nodes || []), ...newNodes],
+        edges: [...(prev.edges || []), ...newEdges],
+      };
+      if (activeId) updateGraph(activeId, updated).catch(console.error);
+      setHistory(h => h.map(e => e.id === activeId ? { ...e, graph: updated } : e));
+      return updated;
+    });
 
-      const newEdges = newNodes.map(n => ({
-        source: nodeId,
-        target: n.id
-      }));
-
-      setGraph(prev => {
-        const updated = {
-          ...prev,
-          nodes: [...(prev.nodes || []), ...newNodes],
-          edges: [...(prev.edges || []), ...newEdges],
-        };
-
-        // Update in MongoDB
-        if (activeId) {
-          updateGraph(activeId, updated).catch(console.error);
-        }
-
-        // Update in local history
-        setHistory(h => h.map(e =>
-          e.id === activeId ? { ...e, graph: updated } : e
-        ));
-
-        return updated;
-      });
-
-      setStatus({ text: `EXPANDED GRAPH UPDATED`, active: true });
+    setStatus({ text: "EXPANDED GRAPH UPDATED", active: true });
   }, [activeId]);
 
-  //Handle expand dialog responses
+  // ── Expand dialog handlers ────────────────────────────────
   const handleExpandKeep = useCallback(() => {
     setShowExpandDialog(false);
     setPendingExpand(null);
   }, []);
 
-  const handleExpandUseInternet = useCallback(()=>{
+  const handleExpandUseInternet = useCallback(() => {
     setShowExpandDialog(false);
-    if(pendingExpand) { 
-        expandFromInternet(pendingExpand.nodeId, pendingExpand.nodeLabel);
-        setPendingExpand(null);
+    if (pendingExpand) {
+      expandFromInternet(pendingExpand.nodeId, pendingExpand.nodeLabel);
+      setPendingExpand(null);
     }
   }, [pendingExpand, expandFromInternet]);
 
@@ -323,17 +315,15 @@ export function useKnowledgeGraph(userId, token) {
     error,
     generate,
     expandNode,
-    //file state
     uploadedFiles,
     internetOn,
     setInternetOn,
     addFiles,
     removeFile,
     clearFiles,
-    //expandDialog
     showExpandDialog,
     pendingExpand,
     handleExpandKeep,
-    handleExpandUseInternet
+    handleExpandUseInternet,
   };
 }

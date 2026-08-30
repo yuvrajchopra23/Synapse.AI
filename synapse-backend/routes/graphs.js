@@ -23,7 +23,7 @@ router.get('/', async(req, res)=> {
 
 router.post('/', async(req, res) =>{
     try{
-        const{ topic, graph} = req.body;
+        const{ topic, graph, sourceFiles, extractedText} = req.body;
         if(!topic || !graph){
             return res.status(400).json({ error: 'topic and graph are required '})
         }
@@ -32,6 +32,8 @@ router.post('/', async(req, res) =>{
             userId: req.userId,
             topic,
             graph,
+            sourceFiles: sourceFiles || [],
+            extractedText: extractedText || '',
         });
 
         res.status(201).json(newGraph);

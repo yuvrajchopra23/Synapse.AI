@@ -15,6 +15,8 @@ const graphSchema = new mongoose.Schema({
         type: Object,
         required: true,
     },
+    sourceFiles: {type: [String], default: []},
+    extractedText: {type: String, default: ''},//save the actual extracted files data
     createdAt: {
         type: Date,
         default: Date.now,

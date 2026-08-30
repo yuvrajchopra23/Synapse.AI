@@ -22,11 +22,11 @@ export async function fetchGraphs() {
 }
 
 // ── Save a new graph
-export async function saveGraph(topic, graph) {
+export async function saveGraph(topic, graph, sourceFiles = [], extractedText = '') {
   const res = await fetch(`${BASE_URL}/api/graphs`, {
     method: 'POST',
     headers: authHeaders(),
-    body: JSON.stringify({ topic, graph }),
+    body: JSON.stringify({ topic, graph, sourceFiles, extractedText }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Failed to save graph');
