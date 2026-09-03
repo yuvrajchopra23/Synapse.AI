@@ -55,6 +55,48 @@ const CY_STYLE = [
       'background-color': '#222222',
     },
   },
+  //contextual node style
+  {
+    selector:'node[type= " contextual"]',
+    style:{
+      'background-color': '#0d1117',
+      'border-color': '#3a3a5c',
+      'border-width': '1px',
+      'border-style': 'dashed',
+      label: 'data(label)',
+      color: '#a0a8c0',
+      'font-size': '9.5px',
+      'font-family': "'Space Mono', monospace",
+      'text-valign': 'center',
+      'text-halign': 'center',
+      'text-wrap': 'wrap',
+      'text-max-width': '260px',
+      'text-overflow-wrap': 'whitespace',
+      width: '280px',
+      height: 'label',
+      'padding': '14px',
+      shape: 'roundrectangle',
+    },
+  },
+  //contextual loading node
+  {
+    selector: 'node[type= "contextual-loading"]',
+    style: {
+      'background-color': '#0d1117',
+      'border-color': '#3a3a5c',
+      'border-width': '1px',
+      'border-style': 'dashed',
+      label: 'Generating...',
+      color: '#555577',
+      'font-size': '10px',
+      'font-family': "'Space Mono', monospace",
+      'text-valign': 'center',
+      'text-halign': 'center',
+      width: '160px',
+      height: '44px',
+      shape: 'roundrectangle',
+    },
+  },
   {
     selector: 'edge',
     style: {
@@ -64,6 +106,18 @@ const CY_STYLE = [
       'target-arrow-color': '#2a2a2a',
       'target-arrow-shape': 'triangle',
       'arrow-scale': 0.6,
+    },
+  },
+  //dashed edge to contextual node
+  {
+    selector: 'edge[type = "contextual"]',
+    style: {
+      width:'0.5px',
+      'line-color': '#3a3a5c',
+      'line-style': 'dashed',
+      'line-dash-pattern': [4, 3],
+      'curve-style': 'bezier',
+      'target-arrow-shape': 'none',
     },
   },
 ];
@@ -77,11 +131,13 @@ const LAYOUT = {
   idealEdgeLength: 110,
   fit: true,
 };
+const CONTEXTUAL_NODE_ID = '__contextual__';
+const CONTEXTUAL_EDGE_ID = '__contextual_edge__';
 
-export default function GraphCanvas({ graph, onNodeSelect, loading, loadingText }) {
+export default function GraphCanvas({ graph, onNodeSelect, loading, loadingText, contextualNode, contextualLoading, }) {
   const containerRef = useRef(null);
   const cyRef        = useRef(null);
-
+//build/rebuild graph when data changes
   useEffect(() => {
     // ── GUARD: don't run if graph is null or root is missing ──
     if (!graph || !graph.root || !containerRef.current) return;
@@ -134,9 +190,11 @@ export default function GraphCanvas({ graph, onNodeSelect, loading, loadingText 
     });
 
     cy.on('tap', 'node', evt => {
+      const node = evt.target;
+      if(node.data('type') === 'contextual') return;
       cy.nodes().removeClass('highlighted');
-      evt.target.addClass('highlighted');
-      onNodeSelect(evt.target.data('nodeData'));
+      node.addClass('highlighted');
+      onNodeSelect(node.data('nodeData'));
     });
 
     cy.on('tap', evt => {
@@ -155,6 +213,63 @@ export default function GraphCanvas({ graph, onNodeSelect, loading, loadingText 
       }
     };
   }, [graph, onNodeSelect]);
+
+  //Handle contextual loading state
+  useEffect(() =>{
+    const cy = cyRef.current;
+    if(!cy) return;
+
+    //Remove existing contextual node/edge
+    cy.getElementById(CONTEXTUAL_NODE_ID).remove();
+    cy.getElementById(CONTEXTUAL_EDGE_ID).remove();
+
+    if(!contextualLoading && !contextualNode) return;
+
+    //find the highlighted (selected) node to attach to
+    const highlighted = cy.nodes('.highlighted');
+    if (highlighted.length === 0) return;
+    const parentId = highlighted.first().id();
+
+    if(contextualLoading){
+      //show loading placeholder
+      cy.add([
+        {data:{id: CONTEXTUAL_NODE_ID, type: 'contextual-loading'}},
+        {data:{id: CONTEXTUAL_EDGE_ID, source: parentId, target: CONTEXTUAL_NODE_ID, type:'contextual'}}
+      ]);
+    }else if(contextualNode){
+      const {data} = contextualNode;
+
+      //format the label - badge + title + content + footer
+      const label = `[${data.badge}] ${data.title}\n${'-'.repeat(28)}\n${data.content}${data.footer ? `\n${'-'.repeat(28)}\n${data.footer}` : ''}`;
+
+      cy.add([
+        {
+          data: {
+            id:    CONTEXTUAL_NODE_ID,
+            label,
+            type:  'contextual',
+          }
+        },
+        {
+          data: {
+            id:     CONTEXTUAL_EDGE_ID,
+            source: parentId,
+            target: CONTEXTUAL_NODE_ID,
+            type:   'contextual',
+          }
+        }
+      ]);
+    }
+
+    //position contextual node to the right of the parent
+    const parentPos = cy.getElementById(parentId).position();
+    if(parentPos) {
+      cy.getElementById(CONTEXTUAL_NODE_ID).position({
+        x: parentPos.x + 220,
+        y: parentPos.y,
+      });
+    }
+  },[contextualNode, contextualLoading]);
 
   return (
     <div className="graph-canvas">

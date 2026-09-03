@@ -22,7 +22,8 @@ export default function App() {
     history, activeId,
     generate, openFromHistory, deleteFromHistory, newGraph, expandNode,
     uploadedFiles, internetOn, setInternetOn, addFiles, removeFile,
-    showExpandDialog, pendingExpand, handleExpandKeep, handleExpandUseInternet
+    showExpandDialog, pendingExpand, handleExpandKeep, handleExpandUseInternet,
+    contextualNode, contextualLoading, generateContextual,
   } = useKnowledgeGraph(user?.id, token);
 
   const [leftCollapsed, setLeftCollapsed] = useState(false);
@@ -33,8 +34,14 @@ export default function App() {
   const handleNodeSelect = useCallback(node => {
     setSelected(node);
     // Auto-switch to notes panel when a node is selected on mobile
-    if (node) setMobilePanel('notes');
-  }, [setSelected]);
+    if (node) {
+      setMobilePanel('notes');
+      generateContextual(node.id, node.label); //trigger contextual generation
+    }
+    else{
+      generateContextual && setSelected(null);
+    }
+  }, [setSelected, generateContextual]);
 
   const handleExpand = useCallback((id, label) => expandNode(id, label), [expandNode]);
 
@@ -95,6 +102,8 @@ export default function App() {
             onNodeSelect={handleNodeSelect}
             loading={loading}
             loadingText={loadingText}
+            contextualNode = {contextualNode}
+            contextualLoading={contextualLoading}
           />
         </div>
 

@@ -467,3 +467,47 @@ return what you can find and set "insufficient": true.
   }
   return parsed; // { insufficient: bool, nodes: [] }
 }
+
+export async function generateContextualContent(nodeLabel, rootTopic){
+  const system = `
+  You are an intelligent educational content generator.
+  Given concept and its root Topic, you must:
+  1. Detect what TYPE of subject this is
+  2. Generate the most appropriate practical content for that subject
+
+  Subject types and what to generate:
+- "dsa": pseudocode + time/space complexity analysis
+- "math": one medium-difficulty solved problem with step-by-step solution
+- "physics": key formula + one solved numerical problem
+- "chemistry": chemical equation or reaction + explanation
+- "biology": process steps or mechanism description
+- "theory": real-world case study or scenario
+- "language": example sentences + grammar/usage rules
+- "business": real example with numbers/data
+- "other": detailed practical example
+
+Return ONLY valid JSON, no markdown:
+{
+"subjectType":"dsa",
+"badge":"PSUEDOCODE",
+"title":"Short title(3-5 words)",
+"content":"The actual content - psuedocode, solved problem, case study etc. use \\n for line breaks."
+"footer": "e.g. Time: O(n) | Space: O(1) or difficulty: medium or Source: Real World"
+}
+
+Rules: 
+- Content must be practical and educational, not just definition
+- For DSA: write actual psuedocode with proper indentation using spaces
+- For Math/Physics: show every step clearly, not just the answer
+- For Theory: use a specific real example, not generic description
+- Keep the content consice but complete - 10 to 20 lines 
+- badge should be short: PSEUDOCODE, SOLVE, FORMULA, REACTION, PROCESS, CASE STUDY, EXAMPLE
+- Return ONLY the JSON object`;
+
+const raw = await callGroq(
+  `Concept: "${nodeLabel}"\nRoot topic: "${rootTopic}"`,
+  system
+);
+
+return parseJSON(raw);
+}

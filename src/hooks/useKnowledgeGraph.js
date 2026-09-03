@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { generateGraphData, expandNodeData, generateGraphFromFiles, generateGraphFromFilesAndInternet, expandNodeFromFiles } from "../utils/GroqApi";
+import { generateGraphData, expandNodeData, generateGraphFromFiles, generateGraphFromFilesAndInternet, expandNodeFromFiles, generateContextualContent } from "../utils/GroqApi";
 import { fetchGraphs, saveGraph, updateGraph, deleteGraph } from "../utils/graphApi";
 import { extractTextFromFiles } from "../utils/uploadApi";
 
@@ -23,6 +23,11 @@ export function useKnowledgeGraph(userId, token) {
   const [internetOn, setInternetOn]       = useState(true);
   const [showExpandDialog, setShowExpandDialog] = useState(false);
   const [pendingExpand, setPendingExpand] = useState(null);
+  
+  //Contextual node state
+  const [contextualNode, setContextualNode] = useState(null); // {nodeId, data}
+  const [contextualLoading, setContextualLoading] = useState(false);
+  const [contextualCache, setContextualCache] = useState({}); // {nodeId: data1}
 
   // ── Load history from MongoDB when user logs in ───────────
   useEffect(() => {
@@ -298,6 +303,35 @@ export function useKnowledgeGraph(userId, token) {
       setPendingExpand(null);
     }
   }, [pendingExpand, expandFromInternet]);
+//generate contextual node for clicked node
+const generateContextual = useCallback(async (nodeId, nodeLabel) => {
+  //if same node clicked again - toggle off
+  if (contextualNode?.nodeId == nodeId){
+    setContextualNode(null);
+    return;
+  }
+
+  //check cache first - don't call API again for the same node
+  if(contextualCache[nodeId]){
+    setContextualNode({nodeId, data: contextualCache[nodeId]});
+    return;
+  }
+
+  setContextualLoading(true);
+  setContextualNode(null);//clear old one immediately
+
+  try{
+    const data =  await generateContextualContent(nodeLabel, rootTopic);
+
+    //save to cache
+    setContextualCache(prev => ({...prev, [nodeId]: data}));
+    setContextualNode({nodeId, data});
+  }catch(err){
+    console.error('Failed to generate contextual node:', err);
+  }finally{
+    setContextualLoading(false);
+  }
+},[contextualNode, contextualCache, rootTopic]);
 
   return {
     graph,
@@ -325,5 +359,8 @@ export function useKnowledgeGraph(userId, token) {
     pendingExpand,
     handleExpandKeep,
     handleExpandUseInternet,
+    contextualNode,
+    contextualLoading,
+    generateContextual
   };
 }
