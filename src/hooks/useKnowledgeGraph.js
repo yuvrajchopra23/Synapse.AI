@@ -25,9 +25,9 @@ export function useKnowledgeGraph(userId, token) {
   const [pendingExpand, setPendingExpand] = useState(null);
   
   //Contextual node state
+  const contextualCacheRef = useRef({});
   const [contextualNode, setContextualNode] = useState(null); // {nodeId, data}
   const [contextualLoading, setContextualLoading] = useState(false);
-  const [contextualCache, setContextualCache] = useState({}); // {nodeId: data1}
 
   // ── Load history from MongoDB when user logs in ───────────
   useEffect(() => {
@@ -142,6 +142,8 @@ export function useKnowledgeGraph(userId, token) {
         setHistory(prev => [entry, ...(Array.isArray(prev) ? prev : [])]);
         setActiveId(entry.id);
         setGraph(data);
+        contextualCacheRef.current = {};
+        setContextualNode(null);
 
       } else {
         // ── Mode 1: topic only ────────────────────────────────
@@ -217,6 +219,8 @@ export function useKnowledgeGraph(userId, token) {
     setActiveId(null);
     setRootTopic('');
     setExtractedText('');
+    contextualCacheRef.current = {}; //clear cache
+    setContextualNode(null);
     setStatus({ text: "READY - ENTER TOPIC TO BEGIN", active: false });
   }, []);
 
@@ -312,8 +316,8 @@ const generateContextual = useCallback(async (nodeId, nodeLabel) => {
   }
 
   //check cache first - don't call API again for the same node
-  if(contextualCache[nodeId]){
-    setContextualNode({nodeId, data: contextualCache[nodeId]});
+  if(contextualCacheRef.current[nodeId]){
+    setContextualNode({nodeId, data: contextualCacheRef.current[nodeId]});
     return;
   }
 
@@ -324,14 +328,14 @@ const generateContextual = useCallback(async (nodeId, nodeLabel) => {
     const data =  await generateContextualContent(nodeLabel, rootTopic);
 
     //save to cache
-    setContextualCache(prev => ({...prev, [nodeId]: data}));
+    contextualCacheRef.current[node.Id] = data; //store in ref, no re- render
     setContextualNode({nodeId, data});
   }catch(err){
     console.error('Failed to generate contextual node:', err);
   }finally{
     setContextualLoading(false);
   }
-},[contextualNode, contextualCache, rootTopic]);
+},[contextualNode, rootTopic]);
 
   return {
     graph,

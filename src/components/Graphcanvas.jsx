@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import cytoscape from 'cytoscape';
 import './Graphcanvas.css';
 
@@ -55,10 +55,9 @@ const CY_STYLE = [
       'background-color': '#222222',
     },
   },
-  //contextual node style
   {
-    selector:'node[type= " contextual"]',
-    style:{
+    selector: 'node[type = "contextual"]',
+    style: {
       'background-color': '#0d1117',
       'border-color': '#3a3a5c',
       'border-width': '1px',
@@ -74,19 +73,18 @@ const CY_STYLE = [
       'text-overflow-wrap': 'whitespace',
       width: '280px',
       height: 'label',
-      'padding': '14px',
+      padding: '14px',
       shape: 'roundrectangle',
     },
   },
-  //contextual loading node
   {
-    selector: 'node[type= "contextual-loading"]',
+    selector: 'node[type = "contextual-loading"]',
     style: {
       'background-color': '#0d1117',
       'border-color': '#3a3a5c',
       'border-width': '1px',
       'border-style': 'dashed',
-      label: 'Generating...',
+      label: '✦ generating...',
       color: '#555577',
       'font-size': '10px',
       'font-family': "'Space Mono', monospace",
@@ -108,11 +106,10 @@ const CY_STYLE = [
       'arrow-scale': 0.6,
     },
   },
-  //dashed edge to contextual node
   {
     selector: 'edge[type = "contextual"]',
     style: {
-      width:'0.5px',
+      width: '0.5px',
       'line-color': '#3a3a5c',
       'line-style': 'dashed',
       'line-dash-pattern': [4, 3],
@@ -131,53 +128,47 @@ const LAYOUT = {
   idealEdgeLength: 110,
   fit: true,
 };
+
 const CONTEXTUAL_NODE_ID = '__contextual__';
 const CONTEXTUAL_EDGE_ID = '__contextual_edge__';
 
-export default function GraphCanvas({ graph, onNodeSelect, loading, loadingText, contextualNode, contextualLoading, }) {
-  const containerRef = useRef(null);
-  const cyRef        = useRef(null);
-//build/rebuild graph when data changes
+export default function GraphCanvas({
+  graph,
+  onNodeSelect,
+  loading,
+  loadingText,
+  contextualNode,
+  contextualLoading,
+  selectedNodeId,  // ← NEW prop: pass the selected node's ID from App
+}) {
+  const containerRef    = useRef(null);
+  const cyRef           = useRef(null);
+  // ── KEY FIX: store callback in ref so it never triggers graph rebuild ──
+  const onNodeSelectRef = useRef(onNodeSelect);
+  useEffect(() => { onNodeSelectRef.current = onNodeSelect; }, [onNodeSelect]);
+
+  // ── Build graph — only rebuilds when graph DATA changes ──────
   useEffect(() => {
-    // ── GUARD: don't run if graph is null or root is missing ──
     if (!graph || !graph.root || !containerRef.current) return;
 
-    if (cyRef.current) {
-      cyRef.current.destroy();
-      cyRef.current = null;
-    }
+    if (cyRef.current) { cyRef.current.destroy(); cyRef.current = null; }
 
     const elements = [];
 
-    // Root node — safely access graph.root now
     elements.push({
-      data: {
-        id: 'root',
-        label: graph.root.label || 'Root',
-        tier: 0,
-        nodeData: graph.root,
-      }
+      data: { id: 'root', label: graph.root.label, tier: 0, nodeData: graph.root }
     });
 
-    // Child nodes — guard each one too
     (graph.nodes || []).forEach(n => {
-      if (!n || !n.id) return; // skip malformed nodes
+      if (!n || !n.id) return;
       elements.push({
-        data: {
-          id: n.id,
-          label: n.label || '',
-          tier: n.tier ?? 1,
-          nodeData: n,
-        }
+        data: { id: n.id, label: n.label, tier: n.tier ?? 1, nodeData: n }
       });
     });
 
-    // Edges
     (graph.edges || []).forEach((e, i) => {
-      if (!e || !e.source || !e.target) return; // skip malformed edges
-      elements.push({
-        data: { id: `e_${i}`, source: e.source, target: e.target }
-      });
+      if (!e || !e.source || !e.target) return;
+      elements.push({ data: { id: `e_${i}`, source: e.source, target: e.target } });
     });
 
     const cy = cytoscape({
@@ -191,85 +182,66 @@ export default function GraphCanvas({ graph, onNodeSelect, loading, loadingText,
 
     cy.on('tap', 'node', evt => {
       const node = evt.target;
-      if(node.data('type') === 'contextual') return;
+      if (node.data('type') === 'contextual') return;
       cy.nodes().removeClass('highlighted');
       node.addClass('highlighted');
-      onNodeSelect(node.data('nodeData'));
+      // Use ref — never stale, never causes rebuild
+      onNodeSelectRef.current(node.data('nodeData'));
     });
 
     cy.on('tap', evt => {
       if (evt.target === cy) {
         cy.nodes().removeClass('highlighted');
-        onNodeSelect(null);
+        onNodeSelectRef.current(null);
       }
     });
 
     cyRef.current = cy;
+    return () => { if (cyRef.current) { cyRef.current.destroy(); cyRef.current = null; } };
+  }, [graph]); // ← ONLY graph in deps — not onNodeSelect
 
-    return () => {
-      if (cyRef.current) {
-        cyRef.current.destroy();
-        cyRef.current = null;
-      }
-    };
-  }, [graph, onNodeSelect]);
-
-  //Handle contextual loading state
-  useEffect(() =>{
+  // ── Render contextual node — separate from graph rebuild ─────
+  useEffect(() => {
     const cy = cyRef.current;
-    if(!cy) return;
+    if (!cy) return;
 
-    //Remove existing contextual node/edge
+    // Always remove old contextual node first
     cy.getElementById(CONTEXTUAL_NODE_ID).remove();
     cy.getElementById(CONTEXTUAL_EDGE_ID).remove();
 
-    if(!contextualLoading && !contextualNode) return;
+    // No selected node — nothing to attach to
+    if (!selectedNodeId) return;
+    if (!contextualLoading && !contextualNode) return;
 
-    //find the highlighted (selected) node to attach to
-    const highlighted = cy.nodes('.highlighted');
-    if (highlighted.length === 0) return;
-    const parentId = highlighted.first().id();
+    const parentNode = cy.getElementById(selectedNodeId);
+    if (!parentNode || parentNode.length === 0) return;
 
-    if(contextualLoading){
-      //show loading placeholder
+    if (contextualLoading) {
       cy.add([
-        {data:{id: CONTEXTUAL_NODE_ID, type: 'contextual-loading'}},
-        {data:{id: CONTEXTUAL_EDGE_ID, source: parentId, target: CONTEXTUAL_NODE_ID, type:'contextual'}}
+        { data: { id: CONTEXTUAL_NODE_ID, type: 'contextual-loading' } },
+        { data: { id: CONTEXTUAL_EDGE_ID, source: selectedNodeId, target: CONTEXTUAL_NODE_ID, type: 'contextual' } }
       ]);
-    }else if(contextualNode){
-      const {data} = contextualNode;
-
-      //format the label - badge + title + content + footer
-      const label = `[${data.badge}] ${data.title}\n${'-'.repeat(28)}\n${data.content}${data.footer ? `\n${'-'.repeat(28)}\n${data.footer}` : ''}`;
+    } else if (contextualNode) {
+      const { data } = contextualNode;
+      const label = `[ ${data.badge} ]  ${data.title}\n${'─'.repeat(28)}\n${data.content}${data.footer ? `\n${'─'.repeat(28)}\n${data.footer}` : ''}`;
 
       cy.add([
-        {
-          data: {
-            id:    CONTEXTUAL_NODE_ID,
-            label,
-            type:  'contextual',
-          }
-        },
-        {
-          data: {
-            id:     CONTEXTUAL_EDGE_ID,
-            source: parentId,
-            target: CONTEXTUAL_NODE_ID,
-            type:   'contextual',
-          }
-        }
+        { data: { id: CONTEXTUAL_NODE_ID, label, type: 'contextual' } },
+        { data: { id: CONTEXTUAL_EDGE_ID, source: selectedNodeId, target: CONTEXTUAL_NODE_ID, type: 'contextual' } }
       ]);
     }
 
-    //position contextual node to the right of the parent
-    const parentPos = cy.getElementById(parentId).position();
-    if(parentPos) {
+    // Position to the right of parent
+    const parentPos = cy.getElementById(selectedNodeId).position();
+    if (parentPos) {
       cy.getElementById(CONTEXTUAL_NODE_ID).position({
-        x: parentPos.x + 220,
+        x: parentPos.x + 240,
         y: parentPos.y,
       });
     }
-  },[contextualNode, contextualLoading]);
+
+  }, [contextualNode, contextualLoading, selectedNodeId]);
+  // ↑ selectedNodeId in deps — stable string, won't cause graph rebuild
 
   return (
     <div className="graph-canvas">

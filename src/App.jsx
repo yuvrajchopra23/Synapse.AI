@@ -38,9 +38,6 @@ export default function App() {
       setMobilePanel('notes');
       generateContextual(node.id, node.label); //trigger contextual generation
     }
-    else{
-      generateContextual && setSelected(null);
-    }
   }, [setSelected, generateContextual]);
 
   const handleExpand = useCallback((id, label) => expandNode(id, label), [expandNode]);
@@ -104,6 +101,7 @@ export default function App() {
             loadingText={loadingText}
             contextualNode = {contextualNode}
             contextualLoading={contextualLoading}
+            selectedNodeId={selectedNode?.id || null}
           />
         </div>
 
