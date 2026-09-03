@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { generateGraphData, expandNodeData, generateGraphFromFiles, generateGraphFromFilesAndInternet, expandNodeFromFiles, generateContextualContent } from "../utils/GroqApi";
 import { fetchGraphs, saveGraph, updateGraph, deleteGraph } from "../utils/graphApi";
 import { extractTextFromFiles } from "../utils/uploadApi";
@@ -328,7 +328,7 @@ const generateContextual = useCallback(async (nodeId, nodeLabel) => {
     const data =  await generateContextualContent(nodeLabel, rootTopic);
 
     //save to cache
-    contextualCacheRef.current[node.Id] = data; //store in ref, no re- render
+    contextualCacheRef.current[nodeId] = data; //store in ref, no re- render
     setContextualNode({nodeId, data});
   }catch(err){
     console.error('Failed to generate contextual node:', err);
