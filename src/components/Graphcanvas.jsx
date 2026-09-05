@@ -66,17 +66,15 @@ const CY_STYLE = [
     color: '#a0a8c0',
     'font-size': '10px',
     'font-family': "'Space Mono', monospace",
-    'text-valign': 'top',           // ← change to top
-    'text-halign': 'left',
-    'text-justification': 'left',
+    'text-valign': 'center',
+    'text-halign': 'center',
+    'text-justification': 'left',  // ← only this changes
     'text-wrap': 'wrap',
-    'text-max-width': '260px',
+    'text-max-width': '240px',
     'text-overflow-wrap': 'whitespace',
-    'text-margin-x': '14px',        // ← left padding
-    'text-margin-y': '-14px',       // ← top padding
-    width: '300px',
-    height: 'data(nodeHeight)',     // ← use dynamic height from data
-    padding: '0px',
+    width: '280px',
+    height: 'label',
+    padding: '20px',
     shape: 'roundrectangle',
   },
 },
@@ -227,40 +225,11 @@ export default function GraphCanvas({
     } else if (contextualNode) {
   const { data } = contextualNode;
 
-  const separator = '─'.repeat(32);
-  const lines = [
-    `[ ${data.badge} ]  ${data.title}`,
-    separator,
-    data.content,
-  ];
-  if (data.footer) {
-    lines.push(separator);
-    lines.push(data.footer);
-  }
-
-  const label = lines.join('\n');
-
-  // Count total lines to calculate height
-  const lineCount = label.split('\n').length;
-  const nodeHeight = Math.max(120, lineCount * 16 + 40); // 16px per line + padding
+  const label = `[ ${data.badge} ]  ${data.title}\n${'─'.repeat(28)}\n${data.content}${data.footer ? `\n${'─'.repeat(28)}\n${data.footer}` : ''}`;
 
   cy.add([
-    {
-      data: {
-        id: CONTEXTUAL_NODE_ID,
-        label,
-        type: 'contextual',
-        nodeHeight,               // ← pass height as data
-      }
-    },
-    {
-      data: {
-        id: CONTEXTUAL_EDGE_ID,
-        source: selectedNodeId,
-        target: CONTEXTUAL_NODE_ID,
-        type: 'contextual',
-      }
-    }
+    { data: { id: CONTEXTUAL_NODE_ID, label, type: 'contextual' } },
+    { data: { id: CONTEXTUAL_EDGE_ID, source: selectedNodeId, target: CONTEXTUAL_NODE_ID, type: 'contextual' } }
   ]);
 }
 
