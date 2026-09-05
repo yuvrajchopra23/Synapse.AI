@@ -90,7 +90,7 @@
 @media(max-width: 768px){
   .topbar{
     padding:10px 12px;
-    gap:8px;
+    gap:6px;
   }
   .topbar__logo{
     display: none;
@@ -98,11 +98,13 @@
 
   .topbar__search{
     flex:1;
+    min-width: 0;
   }
 
   .topbar__btn{
-    padding: 8px 12px;
+    padding: 8px 10px;
     font-size: 11px;
+    white-space: nowrap;
   }
 
   .topbar__user-name{
@@ -111,6 +113,21 @@
 
   .topbar__user{
     gap: 6px;
+    flex-shrink: 0;
+  }
+  .topbar__logout{
+    display: flex;
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  .topbar__upload{
+    padding: 8px 8px;
+    font-size: 11px;
+  }
+
+  .topbar__internet{
+    padding: 7px 6px;
+    font-size: 10px;
   }
 }
 

@@ -13,6 +13,7 @@ import { useKnowledgeGraph } from './hooks/useKnowledgeGraph';
 import { useAuth } from './components/AuthContext';
 
 export default function App() {
+  const [selectedNodeId, setSelectedNodeId] = useState(null);
   const { isLoggedIn, loading: authLoading, user, logoutUser, token } = useAuth();
   const [authPage, setAuthPage] = useState('login');
 
@@ -35,8 +36,14 @@ export default function App() {
     setSelected(node);
     // Auto-switch to notes panel when a node is selected on mobile
     if (node) {
-      setMobilePanel('notes');
+      //update selectedNodeId first so graphcanvas knows where to attach
+      setSelectedNodeId(node.id);
+      //Do not auto switch to notes on mobile - user wants to see contextual node
+      //only switch if they're on history tab
+      setMobilePanel(prev => prev === 'history' ? 'graph' : prev);
       generateContextual(node.id, node.label); //trigger contextual generation
+    }else{
+      setSelectedNodeId(null);
     }
   }, [setSelected, generateContextual]);
 
@@ -101,7 +108,7 @@ export default function App() {
             loadingText={loadingText}
             contextualNode = {contextualNode}
             contextualLoading={contextualLoading}
-            selectedNodeId={selectedNode?.id || null}
+            selectedNodeId={selectedNodeId} //stable, updates first
           />
         </div>
 
@@ -114,7 +121,9 @@ export default function App() {
       {/* Bottom nav — only visible on mobile */}
       <BottomNav
         activePanel={mobilePanel}
-        onChange={setMobilePanel}
+        onChange={(panel) => {
+          setMobilePanel(panel);
+        }}
         hasGraph={!!graph}
         hasNode={!!selectedNode}
       />

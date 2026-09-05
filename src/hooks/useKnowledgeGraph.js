@@ -189,6 +189,9 @@ export function useKnowledgeGraph(userId, token) {
     setSelected(null);
     // Restore extracted text so file-based expansion works after reload
     setExtractedText(entry.extractedText || '');
+    //clear the contextual state when switching graphs
+    contextualCacheRef.current = {};
+    setContextualNode(null);
     const total = (entry.graph.nodes?.length || 0) + 1;
     setStatus({
       text: `GRAPH LOADED - ${total} NODES - CLICK TO EXPLORE`,
@@ -220,7 +223,7 @@ export function useKnowledgeGraph(userId, token) {
     setRootTopic('');
     setExtractedText('');
     contextualCacheRef.current = {}; //clear cache
-    setContextualNode(null);
+    setContextualNode(null);//clear node
     setStatus({ text: "READY - ENTER TOPIC TO BEGIN", active: false });
   }, []);
 
