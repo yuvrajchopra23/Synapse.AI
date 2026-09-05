@@ -75,7 +75,7 @@ const CY_STYLE = [
       'text-margin-x':'12px',
       width: '300px',
       height: 'label',
-      'padding': '14px',
+      padding: '14px',
       shape: 'roundrectangle',
     },
   },
