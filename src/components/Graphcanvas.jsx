@@ -228,7 +228,7 @@ export default function GraphCanvas({
       const separator = '-'.repeat(32);
       const lines = [
         `[${data.badge}] ${data.title}`,
-        seperator,
+        separator,
         data.content,
       ];
       if (data.footer) {
@@ -236,7 +236,7 @@ export default function GraphCanvas({
         lines.push(data.footer);
       }
       const label = lines.join('\n');
-      
+
       cy.add([
         { data: { id: CONTEXTUAL_NODE_ID, label, type: 'contextual' } },
         { data: { id: CONTEXTUAL_EDGE_ID, source: selectedNodeId, target: CONTEXTUAL_NODE_ID, type: 'contextual' } }
