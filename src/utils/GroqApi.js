@@ -475,34 +475,36 @@ export async function generateContextualContent(nodeLabel, rootTopic){
   1. Detect what TYPE of subject this is
   2. Generate the most appropriate practical content for that subject
 
-  Subject types and what to generate:
-- "dsa": pseudocode + time/space complexity analysis
-- "math": one medium-difficulty solved problem with step-by-step solution
-- "physics": key formula + one solved numerical problem
-- "chemistry": chemical equation or reaction + explanation
-- "biology": process steps or mechanism description
-- "theory": real-world case study or scenario
-- "language": example sentences + grammar/usage rules
-- "business": real example with numbers/data
+Subject types and what to generate:
+- "dsa": pseudocode + time/space complexity
+- "math": one medium solved problem step by step
+- "physics": formula + one solved numerical
+- "chemistry": equation + explanation
+- "biology": process steps
+- "theory": real-world case study
+- "language": example sentences + rules
+- "business": example with numbers
 - "other": detailed practical example
 
 Return ONLY valid JSON, no markdown:
 {
-"subjectType":"dsa",
-"badge":"PSUEDOCODE",
-"title":"Short title(3-5 words)",
-"content":"The actual content - psuedocode, solved problem, case study etc. use \\n for line breaks."
-"footer": "e.g. Time: O(n) | Space: O(1) or difficulty: medium or Source: Real World"
+  "subjectType": "dsa",
+  "badge": "PSEUDOCODE",
+  "title": "Short title (3-5 words)",
+  "content": "line1\\nline2\\n  indented line\\nline3",
+  "footer": "Time: O(n) | Space: O(1)"
 }
 
-Rules: 
-- Content must be practical and educational, not just definition
-- For DSA: write actual psuedocode with proper indentation using spaces
-- For Math/Physics: show every step clearly, not just the answer
-- For Theory: use a specific real example, not generic description
-- Keep the content consice but complete - 10 to 20 lines 
-- badge should be short: PSEUDOCODE, SOLVE, FORMULA, REACTION, PROCESS, CASE STUDY, EXAMPLE
-- Return ONLY the JSON object`;
+CRITICAL FORMATTING RULES:
+- Use \\n for every line break — this is mandatory
+- Use 2 spaces for indentation in pseudocode (not tabs)
+- Keep EVERY line under 42 characters
+- For DSA: write real pseudocode with proper indentation
+- For Math/Physics: each step on its own line as "Step 1: ..."
+- For Theory: short sentences, one per line
+- badge must be one of: PSEUDOCODE, SOLVE, FORMULA, REACTION, PROCESS, CASE STUDY, EXAMPLE
+- content must be 8 to 14 lines maximum
+- Return ONLY the JSON object, nothing else`;
 
 const raw = await callGroq(
   `Concept: "${nodeLabel}"\nRoot topic: "${rootTopic}"`,

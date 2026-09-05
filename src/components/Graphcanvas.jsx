@@ -64,16 +64,18 @@ const CY_STYLE = [
       'border-style': 'dashed',
       label: 'data(label)',
       color: '#a0a8c0',
-      'font-size': '9.5px',
+      'font-size': '10px',
       'font-family': "'Space Mono', monospace",
       'text-valign': 'center',
-      'text-halign': 'center',
+      'text-halign': 'left',
+      'text-justification':'left',
       'text-wrap': 'wrap',
-      'text-max-width': '260px',
+      'text-max-width': '280px',
       'text-overflow-wrap': 'whitespace',
-      width: '280px',
+      'text-margin-x':'12px',
+      width: '300px',
       height: 'label',
-      padding: '14px',
+      'padding': '14px',
       shape: 'roundrectangle',
     },
   },
@@ -223,8 +225,18 @@ export default function GraphCanvas({
       ]);
     } else if (contextualNode) {
       const { data } = contextualNode;
-      const label = `[ ${data.badge} ]  ${data.title}\n${'─'.repeat(28)}\n${data.content}${data.footer ? `\n${'─'.repeat(28)}\n${data.footer}` : ''}`;
-
+      const separator = '-'.repeat(32);
+      const lines = [
+        `[${data.badge}] ${data.title}`,
+        seperator,
+        data.content,
+      ];
+      if (data.footer) {
+        lines.push(separator);
+        lines.push(data.footer);
+      }
+      const label = lines.join('\n');
+      
       cy.add([
         { data: { id: CONTEXTUAL_NODE_ID, label, type: 'contextual' } },
         { data: { id: CONTEXTUAL_EDGE_ID, source: selectedNodeId, target: CONTEXTUAL_NODE_ID, type: 'contextual' } }
