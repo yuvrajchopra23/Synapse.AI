@@ -56,29 +56,30 @@ const CY_STYLE = [
     },
   },
   {
-    selector: 'node[type = "contextual"]',
-    style: {
-      'background-color': '#0d1117',
-      'border-color': '#3a3a5c',
-      'border-width': '1px',
-      'border-style': 'dashed',
-      label: 'data(label)',
-      color: '#a0a8c0',
-      'font-size': '10px',
-      'font-family': "'Space Mono', monospace",
-      'text-valign': 'center',
-      'text-halign': 'left',
-      'text-justification':'left',
-      'text-wrap': 'wrap',
-      'text-max-width': '280px',
-      'text-overflow-wrap': 'whitespace',
-      'text-margin-x':'12px',
-      width: '300px',
-      height: 'label',
-      padding: '14px',
-      shape: 'roundrectangle',
-    },
+  selector: 'node[type = "contextual"]',
+  style: {
+    'background-color': '#0d1117',
+    'border-color': '#3a3a5c',
+    'border-width': '1px',
+    'border-style': 'dashed',
+    label: 'data(label)',
+    color: '#a0a8c0',
+    'font-size': '10px',
+    'font-family': "'Space Mono', monospace",
+    'text-valign': 'top',           // ← change to top
+    'text-halign': 'left',
+    'text-justification': 'left',
+    'text-wrap': 'wrap',
+    'text-max-width': '260px',
+    'text-overflow-wrap': 'whitespace',
+    'text-margin-x': '14px',        // ← left padding
+    'text-margin-y': '-14px',       // ← top padding
+    width: '300px',
+    height: 'data(nodeHeight)',     // ← use dynamic height from data
+    padding: '0px',
+    shape: 'roundrectangle',
   },
+},
   {
     selector: 'node[type = "contextual-loading"]',
     style: {
@@ -224,24 +225,44 @@ export default function GraphCanvas({
         { data: { id: CONTEXTUAL_EDGE_ID, source: selectedNodeId, target: CONTEXTUAL_NODE_ID, type: 'contextual' } }
       ]);
     } else if (contextualNode) {
-      const { data } = contextualNode;
-      const separator = '-'.repeat(32);
-      const lines = [
-        `[${data.badge}] ${data.title}`,
-        separator,
-        data.content,
-      ];
-      if (data.footer) {
-        lines.push(separator);
-        lines.push(data.footer);
-      }
-      const label = lines.join('\n');
+  const { data } = contextualNode;
 
-      cy.add([
-        { data: { id: CONTEXTUAL_NODE_ID, label, type: 'contextual' } },
-        { data: { id: CONTEXTUAL_EDGE_ID, source: selectedNodeId, target: CONTEXTUAL_NODE_ID, type: 'contextual' } }
-      ]);
+  const separator = '─'.repeat(32);
+  const lines = [
+    `[ ${data.badge} ]  ${data.title}`,
+    separator,
+    data.content,
+  ];
+  if (data.footer) {
+    lines.push(separator);
+    lines.push(data.footer);
+  }
+
+  const label = lines.join('\n');
+
+  // Count total lines to calculate height
+  const lineCount = label.split('\n').length;
+  const nodeHeight = Math.max(120, lineCount * 16 + 40); // 16px per line + padding
+
+  cy.add([
+    {
+      data: {
+        id: CONTEXTUAL_NODE_ID,
+        label,
+        type: 'contextual',
+        nodeHeight,               // ← pass height as data
+      }
+    },
+    {
+      data: {
+        id: CONTEXTUAL_EDGE_ID,
+        source: selectedNodeId,
+        target: CONTEXTUAL_NODE_ID,
+        type: 'contextual',
+      }
     }
+  ]);
+}
 
     // Position to the right of parent
     const parentPos = cy.getElementById(selectedNodeId).position();
