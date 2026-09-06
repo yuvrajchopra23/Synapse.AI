@@ -89,15 +89,16 @@
 
 @media(max-width: 768px){
   .topbar{
-    padding:10px 12px;
+    padding:8px 10px;
     gap:6px;
+    flex-wrap: wrap;
   }
   .topbar__logo{
     display: none;
   }
 
   .topbar__search{
-    flex:1;
+    flex:1 1 100%;
     min-width: 0;
   }
 
@@ -112,22 +113,27 @@
   }
 
   .topbar__user{
-    gap: 6px;
-    flex-shrink: 0;
+    flex: 1;
+    justify-content: center;
   }
   .topbar__logout{
-    display: flex;
-    padding: 6px 10px;
+    flex: 1;
+    padding: 7px 6px;
     font-size: 11px;
+    text-align: center;
   }
   .topbar__upload{
-    padding: 8px 8px;
+    flex: 1;
+    padding: 7px 6px;
     font-size: 11px;
+    text-align: center;
   }
 
   .topbar__internet{
+    flex: 1;
     padding: 7px 6px;
-    font-size: 10px;
+    font-size: 11px;
+    text-align: center;
   }
 }
 

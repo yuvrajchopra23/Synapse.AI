@@ -67,9 +67,9 @@ export default function Topbar({ onGenerate, loading, user, onLogout, onFilesAdd
         disabled={loading}
         type="button"
       >
-        ↑ Files
+        ↑ File
       </button>
-      
+
       {/* Internet toggle — always visible */}
       <button
         className={`topbar__internet ${internetOn ? 'topbar__internet--on' : ''}`}
