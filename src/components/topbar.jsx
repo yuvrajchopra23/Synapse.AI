@@ -79,7 +79,17 @@ export default function Topbar({ onGenerate, loading, user, onLogout, onFilesAdd
       >
         {internetOn ? '🌐 ON' : '🌐 OFF'}
       </button>
-
+      {/*export pdf only show when the graph is loaded*/}
+      {onExport && (
+        <button
+          className="topbar__export"
+          onClick={onExport}
+          title="Export Graph as PDF"
+          type="button"
+          >
+           ↓ PDF 
+          </button>
+      )}
       <button
         className="topbar__btn"
         onClick={handleSubmit}

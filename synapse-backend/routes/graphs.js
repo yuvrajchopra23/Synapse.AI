@@ -84,4 +84,46 @@ router.delete('/:id', async(req, res) => {
     }
 });
 
+//POST /api/graphs/:id/share - generate a public share token
+router.post('/:id/share', async(req, res) => {
+    try{
+        const graph = await Graph.findOne({
+            _id: req.params.id, 
+            userId: req.userId,
+        });
+        if(!graph) return res.status(404).json({error: 'Graph not found'});
+
+        //generate a unique share token if not already shared
+        if(!graph.shareToken){
+            graph.shareToken = require('crypto').randomBytes(16).toString('hex');
+            await graph.save();
+        }
+
+        res.json({shareToken: graph.shareToken});
+    }catch(err){
+        console.error(err);
+        res.status(500).json({error: 'Failed to generate share token'});
+    }
+});
+
+//GET /api/shared/:token - public route, no auth needed
+router.get('/shared/:token', async(req, res) => {
+    try{
+        const graph = await Graph.findOne({shareToken: req.params.token});
+
+        if(!graph){
+            return res.status(404).json({error: 'Graph not found or link expired'});
+        }
+
+        res.json({
+            topic: graph.topic,
+            graph: graph.graph,
+            createdAt: graph.createdAt,
+        });
+    }catch(err){
+        console.error(err);
+        res.status(500).json({error: 'failed to load shared graph'});
+    }
+});
+
 module.exports = router;

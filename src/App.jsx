@@ -9,10 +9,25 @@ import FileBar       from './components/FileBar';
 import ExpandDialog  from './components/ExpandDialog'
 import Login         from './components/Login';
 import Signup        from './components/Signup';
+import SharedGraph   from './components/SharedGraph';
+import ShareModal     from './components/ShareModal';
+import { shareGraph } from './utils/graphApi';
+import { exportGraphAsPdf } from './utils/exportPdf'; 
 import { useKnowledgeGraph } from './hooks/useKnowledgeGraph';
 import { useAuth } from './components/AuthContext';
 
 export default function App() {
+  //check if this is a shared graph URl
+  const urlParams = new URLSearchParams(window.location.search);
+  const shareToken = urlParams.get('share');
+
+  //if share token in url - show shared graph (no login needed)
+  if(shareToken){
+    return <SharedGraph token={shareToken} />
+  }
+  const [showShareModal, setShowShareModal] = useState(false);  
+  const [shareGraphId, setShareGraphId] = useState(null);
+
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const { isLoggedIn, loading: authLoading, user, logoutUser, token } = useAuth();
   const [authPage, setAuthPage] = useState('login');
@@ -32,6 +47,18 @@ export default function App() {
   // Mobile: which panel is currently visible
   const [mobilePanel, setMobilePanel] = useState('graph');
 
+  //share handlers
+  async function handleShare(graphId){
+    const FRONTEND_URL = 'https://synapse-ai.onrender.com';
+    const {shareToken} = await shareGraph(graphId);
+    return `${FRONTEND_URL}/?share=${shareToken}`;
+  }
+
+  function handleExport(){
+    if (graph && rootTopic){
+      exportGraphAsPdf(graph, rootTopic);
+    }
+  }
   const handleNodeSelect = useCallback(node => {
     setSelected(node);
     // Auto-switch to notes panel when a node is selected on mobile
@@ -72,6 +99,7 @@ export default function App() {
         onFilesAdded={addFiles}
         internetOn={internetOn}
         onToggleInternet={()=> setInternetOn(p => !p)}
+        onExport={graph ? handleExport : null} //only show when the graph is loaded
       />
       {/*file bar- shows when files are uploaded */}
       <FileBar
@@ -133,6 +161,14 @@ export default function App() {
         <div className={`app__dot ${status.active ? 'app__dot--active' : ''}`} />
         <span className="app__status-text">{status.text}</span>
       </div>
+
+      {/* Share modal */}
+      {showShareModal && (
+        <ShareModal
+          graphId={shareGraphId}
+          onClose={() => setShowShareModal(false)}
+        />  
+      )}
       {/* Expand dialog - shown when file expansion has no content */}
     {showExpandDialog && (
       <ExpandDialog

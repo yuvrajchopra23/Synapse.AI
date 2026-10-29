@@ -29,6 +29,7 @@ export default function LeftSidebar({
   onNew,
   collapsed,
   onToggle,
+  onShare
 }) {
   // ← normalize to array no matter what comes in
   const safeHistory = Array.isArray(history) ? history : [];
@@ -81,8 +82,16 @@ export default function LeftSidebar({
                       </svg>
                       <span className="lsidebar__item-label">{entry.topic}</span>
                     </div>
-
+                    
                     {hoveredId === entry.id && (
+                      <div style={{display: 'flex', gap: '4px'}}>
+                        <button
+                          className="lsidebar__item-share"
+                          onClick={e => {e.stopPropagation(); onShare(entry.id);}}
+                          title="Share"
+                          >
+                            ↗
+                          </button>
                       <button
                         className="lsidebar__item-delete"
                         onClick={e => { e.stopPropagation(); onDelete(entry.id); }}
@@ -90,6 +99,7 @@ export default function LeftSidebar({
                       >
                         ✕
                       </button>
+                      </div>
                     )}
                   </div>
                 ))}

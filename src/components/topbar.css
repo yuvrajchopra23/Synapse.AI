@@ -193,3 +193,30 @@
     font-size: 10px;
   }
 }
+.topbar__export {
+  padding: 8px 14px;
+  background: none;
+  border: 0.5px solid var(--border-mid);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  font-family: var(--font-sans);
+}
+.topbar__export:hover {
+  border-color: var(--border-bright);
+  color: var(--text-primary);
+}
+
+@media (max-width: 768px) {
+  .topbar__export {
+    flex: 1;
+    padding: 7px 6px;
+    font-size: 11px;
+    text-align: center;
+  }
+}

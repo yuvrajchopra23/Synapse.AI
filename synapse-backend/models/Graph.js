@@ -17,6 +17,11 @@ const graphSchema = new mongoose.Schema({
     },
     sourceFiles: {type: [String], default: []},
     extractedText: {type: String, default: ''},//save the actual extracted files data
+    shareToken:{
+        type: String,
+        default: null,
+        index: true,
+    },
     createdAt: {
         type: Date,
         default: Date.now,

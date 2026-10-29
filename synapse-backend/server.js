@@ -15,6 +15,18 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));//allow requests from react app(different port)
 app.use(express.json());//parse JSON request bodies
+
+const Graph = require('./models/Graph');
+app.get('/api/shared/:token', async(req, res) => {
+    try{
+        const graph = await Graph.findOne({shareToken: req.params.token});
+        if (!graph) return res.status(404).json({error: 'Graph not found'});
+        res.json({topic: graph.topic, graph: graph.graph, createdAt: graph.createdAt});
+    }catch(err){
+        res.status(500).json({error: 'Failed to load shared graph'});
+    }
+});
+
 app.use('/api/upload', uploadRoutes);
 app.use('/api/auth', authRoutes);//mount auth routes - all auth endpoints start with /api/auth
 app.use('/api/graphs', graphRoutes);

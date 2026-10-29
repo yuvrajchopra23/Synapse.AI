@@ -55,3 +55,21 @@ export async function deleteGraph(id) {
   if (!res.ok) throw new Error(data.error || 'Failed to delete graph');
   return data;
 }
+//generate a shareable link for a graph
+export async function shareGraph(id){
+  const res = await fetch(`${BASE_URL}/api/graphs/${id}/share`, {
+    method: 'POST',
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if(!res.ok) throw new Error(data.error || 'Failed to generate Shared Link');
+  return data; // {shareToken: '...'}
+}
+
+//fetch a publicly shared graph, no auth
+export async function fetchSharedGraph(token){
+  const res = await fetch(`${BASE_URL}/api/shared/${token}`);
+  const data = await res.json();
+  if(!res.ok) throw new Error(data.error || 'Failed to fetch shared graph');
+  return data; // {topic, graph, createdAt}
+}
