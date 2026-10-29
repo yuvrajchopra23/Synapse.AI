@@ -12,7 +12,7 @@ import Signup        from './components/Signup';
 import SharedGraph   from './components/SharedGraph';
 import ShareModal     from './components/ShareModal';
 import { shareGraph } from './utils/graphApi';
-import { exportGraphAsPdf } from './utils/exportPdf'; 
+import { exportGraphAsPDF } from './utils/exportPdf'; 
 import { useKnowledgeGraph } from './hooks/useKnowledgeGraph';
 import { useAuth } from './components/AuthContext';
 
@@ -56,7 +56,7 @@ export default function App() {
 
   function handleExport(){
     if (graph && rootTopic){
-      exportGraphAsPdf(graph, rootTopic);
+      exportGraphAsPDF(graph, rootTopic);
     }
   }
   const handleNodeSelect = useCallback(node => {
