@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import './topbar.css';
 
-export default function Topbar({ onGenerate, loading, user, onLogout, onFilesAdded, internetOn, onToggleInternet }) {
+export default function Topbar({ onGenerate, loading, user, onLogout, onFilesAdded, internetOn, onToggleInternet, onExport }) {
   const [topic, setTopic] = useState('');
   const fileInputRef = useRef(null);
 

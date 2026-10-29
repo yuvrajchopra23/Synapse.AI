@@ -21,10 +21,6 @@ export default function App() {
   const urlParams = new URLSearchParams(window.location.search);
   const shareToken = urlParams.get('share');
 
-  //if share token in url - show shared graph (no login needed)
-  if(shareToken){
-    return <SharedGraph token={shareToken} />
-  }
   const [showShareModal, setShowShareModal] = useState(false);  
   const [shareGraphId, setShareGraphId] = useState(null);
 
@@ -47,18 +43,6 @@ export default function App() {
   // Mobile: which panel is currently visible
   const [mobilePanel, setMobilePanel] = useState('graph');
 
-  //share handlers
-  async function handleShare(graphId){
-    const FRONTEND_URL = 'https://synapse-ai.onrender.com';
-    const {shareToken} = await shareGraph(graphId);
-    return `${FRONTEND_URL}/?share=${shareToken}`;
-  }
-
-  function handleExport(){
-    if (graph && rootTopic){
-      exportGraphAsPDF(graph, rootTopic);
-    }
-  }
   const handleNodeSelect = useCallback(node => {
     setSelected(node);
     // Auto-switch to notes panel when a node is selected on mobile
@@ -75,6 +59,23 @@ export default function App() {
   }, [setSelected, generateContextual]);
 
   const handleExpand = useCallback((id, label) => expandNode(id, label), [expandNode]);
+  //share handlers
+  async function handleShare(graphId){
+    const FRONTEND_URL = 'https://synapse-ai.onrender.com';
+    const {shareToken} = await shareGraph(graphId);
+    return `${FRONTEND_URL}/?share=${shareToken}`;
+  }
+
+  function handleExport(){
+    if (graph && rootTopic){
+      exportGraphAsPDF(graph, rootTopic);
+    }
+  }
+
+  //if share token in url - show shared graph (no login needed)
+  if(shareToken){
+    return <SharedGraph token={shareToken} />
+  }
 
   if (authLoading) return <div className="app" />;
 
@@ -124,6 +125,7 @@ export default function App() {
             }}
             collapsed={leftCollapsed}
             onToggle={() => setLeftCollapsed(p => !p)}
+            onShare={(id) => {setShareGraphId(id); setShowShareModal(true);}}
           />
         </div>
 

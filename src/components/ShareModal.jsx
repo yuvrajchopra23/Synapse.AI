@@ -29,7 +29,7 @@ export default function ShareModal({graphId, onClose, onShare}){
             <div className="share-modal" onClick={e => e.stopPropagation()}>
                 <div className="share-modal__header">
                     <h3>Share Graph</h3>
-                    <button onClick={onCLose}>✕</button>
+                    <button onClick={onClose}>✕</button>
                 </div>
                 <p className="share-modal__desc">
                     Anyone with this link can view this graph without logging in.
