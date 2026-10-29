@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'; 
-import GraphCanvas from './components/Graphcanvas';
-import Sidebar from './components/Sidebar';
+import GraphCanvas from './Graphcanvas';
+import Sidebar from '.sidebar';
 import {fetchSharedGraph} from '../utils/graphApi';
 
 export default function SharedGraph({token}) {
